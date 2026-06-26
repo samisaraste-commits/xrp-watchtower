@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XRP Watchtower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08090d;--surface:#0d0f15;--accent:#5FB4DC;--accent-bright:#8AD4F5;--accent-dim:rgba(95,180,220,.5);
+    --buy:#5DBE84;--stress:#E06A60;--resist:#8a98a8;--text:#d8e2ea;--muted:#7a8694;--dim:#4f5864;
+    --hair:rgba(95,180,220,.12);--hair-soft:rgba(255,255,255,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace}
+  body{padding:34px 30px 26px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto}
+  .eyebrow{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:500}
+  .stamp{font-size:9px;color:var(--dim);letter-spacing:.05em}
+  .live{font-size:9px;color:var(--buy);letter-spacing:.1em}.live::before{content:'● '}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:22px;padding-bottom:20px;border-bottom:1px solid var(--hair);margin-bottom:24px}
+  .brand h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:42px;line-height:1}
+  .brand .sub{margin-top:7px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .price-block{text-align:right}
+  .price-block .lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .price{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:58px;line-height:.9;margin-top:2px;color:#eef5fb}
+  .chg{font-size:13px;font-weight:500;margin-top:6px}.chg.neg{color:var(--stress)}.chg.pos{color:var(--buy)}
+  .upd{font-size:10px;color:var(--dim);margin-top:5px}.upd .ic{color:var(--accent-dim)}
+
+  .grid{display:grid;grid-template-columns:370px 1fr;gap:20px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:20px}
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:18px}
+  .panel-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .panel-h .meta{font-size:10px;color:var(--dim);letter-spacing:.08em}
+
+  .gauge{position:relative;height:600px;margin-top:6px;margin-left:38px}
+  .axis{position:absolute;left:-38px;top:0;bottom:0;width:34px}
+  .tick{position:absolute;right:0;transform:translateY(50%);font-size:9.5px;color:var(--dim);width:100%;text-align:right;padding-right:6px}
+  .tick.major{color:var(--muted)}
+  .tick .gl{position:absolute;right:-4px;top:50%;width:5px;height:1px;background:var(--hair)}
+  .tick.major .gl{width:8px;background:var(--accent-dim)}
+  .band{position:absolute;left:0;right:0}
+  .track{position:absolute;left:0;right:0;top:0;bottom:0;border-left:1px solid var(--hair)}
+  .lvl{position:absolute;left:0;right:0;transform:translateY(50%);display:flex;align-items:center;gap:8px}
+  .lvl .ln{height:1px;width:14px;flex:none}.lvl .px{font-size:10px;font-weight:600;flex:none;width:42px}
+  .lvl .nm{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lvl .st{color:var(--accent);font-size:9px}
+  .lvl.buy .ln{background:var(--buy)}.lvl.buy .px{color:var(--buy)}
+  .lvl.trigger .ln{background:var(--accent)}.lvl.trigger .px{color:var(--accent)}
+  .lvl.resistance .ln{background:var(--resist)}.lvl.resistance .px{color:var(--resist)}
+  .lvl.danger .ln{background:var(--stress)}.lvl.danger .px{color:var(--stress)}
+  .lvl.neutral .ln{background:var(--dim)}.lvl.neutral .px{color:var(--muted)}
+  .needle{position:absolute;left:0;right:-6px;transform:translateY(50%);display:flex;align-items:center;z-index:5}
+  .needle .bar{flex:1;height:2px;background:var(--accent-bright);box-shadow:0 0 10px 1px rgba(138,212,245,.65),0 0 22px 2px rgba(95,180,220,.35)}
+  .needle .dot{position:absolute;left:-5px;width:10px;height:10px;border-radius:50%;background:var(--accent-bright);box-shadow:0 0 10px 2px rgba(138,212,245,.8)}
+  .needle .tag{position:absolute;right:0;background:var(--accent-bright);color:#04222e;font-weight:700;font-size:11px;padding:2px 7px;border-radius:5px}
+  @media (prefers-reduced-motion:no-preference){.needle .dot{animation:pulse 2.6s ease-in-out infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 8px 2px rgba(138,212,245,.7)}50%{box-shadow:0 0 16px 4px rgba(138,212,245,.95)}}}
+  .gauge-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--hair-soft)}
+  .gauge-legend span{font-size:9.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .gauge-legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+  .odds-row{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:14px;background:rgba(95,180,220,.05);border:1px solid var(--hair);border-radius:10px;margin-bottom:16px}
+  .odds-big{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:600;color:var(--accent-bright);line-height:.85}
+  .odds-meta .ol{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .odds-meta .od{font-size:11px;color:var(--text);margin-top:4px}
+  .odds-bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-top:8px;overflow:hidden}
+  .odds-bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
+
+  .ms{display:flex;align-items:center;gap:11px;padding:5px 0}
+  .ms .node{width:13px;height:13px;border-radius:50%;flex:none;border:1.5px solid var(--dim);position:relative;cursor:pointer}
+  .ms.done .node{background:var(--accent);border-color:var(--accent)}
+  .ms.done .node::after{content:'';position:absolute;left:3.5px;top:1px;width:3px;height:6px;border:solid #04222e;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+  .ms.active .node{border-color:var(--accent-bright);box-shadow:0 0 0 3px rgba(95,180,220,.18)}
+  .ms.active .node::after{content:'';position:absolute;left:3px;top:3px;width:5px;height:5px;border-radius:50%;background:var(--accent-bright)}
+  .ms .txt{flex:1;font-size:12px}.ms.pending .txt{color:var(--muted)}
+  .ms .dt{font-size:10px;color:var(--dim)}
+  .src{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair-soft);font-size:10.5px;color:var(--muted);line-height:1.6}
+  .src b{color:var(--text);font-weight:500}.src .tag{color:var(--accent-dim)}
+  .countdown{font-size:11px;color:var(--text);margin-top:6px}
+  .countdown b{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--accent-bright);margin-right:3px}
+
+  .subrow{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 8px}
+  .subrow:first-child{margin-top:0}
+  .sub{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-dim)}
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .d{background:rgba(255,255,255,.02);border-radius:8px;padding:10px 11px}
+  .d .k{font-size:10px;color:var(--muted)}
+  .d .v{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--text);line-height:1.1;margin-top:2px}
+  .d .v.pos{color:var(--buy)}.d .v.neg{color:var(--stress)}
+  .d .n{font-size:9px;color:var(--dim);margin-top:1px}
+  .lswrap{margin-top:10px}
+  .lsbar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:#1a1d24}
+  .lsbar .l{background:var(--buy);transition:width .4s}.lsbar .s{background:var(--stress);transition:width .4s}
+  .lslabel{display:flex;justify-content:space-between;font-size:10px;margin-top:5px}
+  .lslabel .lg{color:var(--buy)}.lslabel .sh{color:var(--stress)}
+
+  .tr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--hair-soft)}
+  .tr:last-child{border-bottom:none}
+  .tr .tnum{font-size:9px;color:var(--dim);width:22px}.tr .zone{font-size:12px;font-weight:500;flex:1}
+  .tr .alloc{font-size:11px;color:var(--muted);width:38px;text-align:right}
+  .tr .pill{font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid var(--dim);color:var(--muted);width:78px;text-align:center;cursor:pointer}
+  .tr.filled .pill{border-color:var(--buy);color:var(--buy);background:rgba(93,190,132,.1)}
+  .tr.active .pill{border-color:var(--accent);color:var(--accent);background:rgba(95,180,220,.08)}
+
+  .xsel{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .xsel select{background:var(--bg);color:var(--text);border:1px solid var(--hair);border-radius:8px;padding:7px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;flex:1}
+  .xsel .hint{font-size:9px;color:var(--dim)}
+  .xcard{border:1px solid var(--hair);border-radius:10px;padding:11px 12px;margin-bottom:10px}
+  .xcard:last-child{margin-bottom:0}
+  .xhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .xhandle{font-size:11px;font-weight:600;color:var(--accent)}.xtime{font-size:9px;color:var(--dim)}
+  .xbody{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
+  .xlink{font-size:9.5px;color:var(--accent-dim);margin-top:7px;display:inline-block;text-decoration:none}
+
+  footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--hair);font-size:10px;color:var(--dim);line-height:1.7}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}.gauge{margin-left:40px}.dgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>XRP Watchtower</h1><div class="sub">Accumulation tracker</div></div>
+    <div class="price-block">
+      <div class="lbl">XRP / USD · spot <span class="live">live</span></div>
+      <div class="price" id="price">$1.13</div>
+      <div class="chg neg" id="chg">▾ 2.1%&nbsp; 24h</div>
+      <div class="upd"><span class="ic">↻</span> <span id="stamp-price">connecting…</span> · CoinGecko</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-h"><div class="eyebrow">Level ladder</div><div class="meta">$0.70 — $2.90</div></div>
+      <div class="gauge" id="gauge"><div class="axis" id="axis"></div><div class="track"></div></div>
+      <div class="gauge-legend">
+        <span><i style="background:var(--buy)"></i>Buy</span><span><i style="background:var(--accent)"></i>Trigger</span>
+        <span><i style="background:var(--resist)"></i>Resistance</span><span><i style="background:var(--stress)"></i>Stress</span>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel">
+        <div class="panel-h"><div class="eyebrow">CLARITY Act</div><div class="meta">market-structure bill</div></div>
+        <div class="odds-row">
+          <div class="odds-big" id="odds">48%</div>
+          <div class="odds-meta">
+            <div class="ol">Polymarket · 2026 passage <span class="live" style="margin-left:4px">live</span></div>
+            <div class="od" id="odds-meta">resolves Dec 31 · <span id="stamp-odds">connecting…</span></div>
+            <div class="odds-bar"><i id="odds-fill" style="width:48%"></i></div>
+          </div>
+        </div>
+        <div id="clarity"></div>
+        <div class="countdown"><b id="countdown">≈39</b> days to est. August recess deadline</div>
+        <div class="src"><b>Latest action:</b> <span id="bill-action">Placed on Senate Legislative Calendar, No. 423</span>
+          <span id="bill-date">· Jun 1 2026</span> <span class="tag">— Congress.gov · <span id="stamp-bill">2×/day</span></span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h"><div class="eyebrow">On-chain</div><div class="meta">whales vs retail</div></div>
+
+        <div class="subrow"><span class="sub">XRP Ledger — native</span><span class="stamp" id="stamp-xrpl">connecting…</span></div>
+        <div class="dgrid">
+          <div class="d"><div class="k">Validated ledger</div><div class="v" id="x-ledger">—</div><div class="n">live index</div></div>
+          <div class="d"><div class="k">Next escrow unlock</div><div class="v" id="x-unlock">1.0B</div><div class="n" id="x-unlock-date">scheduled</div></div>
+          <div class="d"><div class="k">Escrow wallet</div><div class="v" id="x-escrow">—</div><div class="n">XRP balance</div></div>
+          <div class="d"><div class="k">DEX volume 24h</div><div class="v" id="x-dex">$12.4M</div><div class="n">manual</div></div>
+        </div>
+
+        <div class="subrow"><span class="sub">Derivatives — Coinglass</span><span class="stamp" id="stamp-deriv">connecting…</span></div>
+        <div class="dgrid">
+          <div class="d"><div class="k">Funding rate</div><div class="v" id="d-funding">−0.004%</div><div class="n">perp</div></div>
+          <div class="d"><div class="k">Open interest</div><div class="v" id="d-oi">$1.02B</div><div class="n">all exch.</div></div>
+          <div class="d"><div class="k">XRP ETF flow</div><div class="v neg" id="d-etf">−$5.3M</div><div class="n">last session</div></div>
+          <div class="d"><div class="k">L/S ratio</div><div class="v" id="d-ls">0.41</div><div class="n">long ÷ short</div></div>
+        </div>
+        <div class="lswrap">
+          <div class="lsbar"><div class="l" id="ls-long" style="width:29%"></div><div class="s" id="ls-short" style="width:71%"></div></div>
+          <div class="lslabel"><span class="lg">Longs <span id="ls-long-pct">29%</span></span><span class="sh"><span id="ls-short-pct">71%</span> Shorts</span></div>
+        </div>
+
+        <div class="subrow"><span class="sub">Holders — manual</span><span class="stamp">paste weekly</span></div>
+        <div class="dgrid">
+          <div class="d"><div class="k">1M+ wallets hold</div><div class="v" id="h-pct">74.1%</div><div class="n">of supply</div></div>
+          <div class="d"><div class="k">Added 6mo</div><div class="v pos" id="h-add">+1.53B</div><div class="n">XRP</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h"><div class="eyebrow">Entry plan</div><div class="meta">click pill to mark filled</div></div>
+        <div id="plan"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h"><div class="eyebrow">Analyst watch — X</div><div class="meta">manual curate</div></div>
+        <div class="xsel">
+          <select id="xfilter"><option value="all">All analysts</option></select>
+          <span class="hint">edit in CONFIG.x</span>
+        </div>
+        <div id="xcards"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer id="foot">Indicative only, not financial advice · price: CoinGecko · on-chain: XRPL public servers · derivatives: Coinglass · odds: Polymarket · bill: Congress.gov · X cards: manual</footer>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG  —  edit this block, then commit & let Vercel redeploy
+   ============================================================ */
+const CONFIG = {
+  polymarketSlug: 'clarity-act-signed-into-law-in-2026',
+  recessDate: '2026-08-03',          // est. deadline for countdown
+  refreshMin: { price:5, xrpl:5, deriv:20, odds:5, bill:720 },
+
+  // manual values (shown until/unless a live feed overrides them)
+  manual: {
+    dexVolume:'$12.4M',
+    holderPct:'74.1%',
+    holderAdd6mo:'+1.53B'
+  },
+
+  // fallback values if a live feed is unreachable
+  fallback: { price:1.13, change:-2.1, odds:48, funding:'−0.004%', oi:'$1.02B', etf:'−$5.3M', ls:0.41 },
+
+  levels: [
+    {p:2.80,nm:'SC 2026 target · supply top',t:'resistance'},{p:2.50,nm:'Structural improvement',t:'resistance'},
+    {p:2.00,nm:'Psychological',t:'resistance'},{p:1.70,nm:'First major barrier',t:'resistance'},
+    {p:1.58,nm:'200 EMA · reversal line',t:'trigger',star:1},{p:1.50,nm:'R1',t:'resistance'},
+    {p:1.34,nm:'100-day EMA',t:'trigger'},{p:1.30,nm:'Daily close = momentum',t:'trigger',star:1},
+    {p:1.21,nm:'Pivot · S1',t:'neutral'},{p:1.10,nm:'Demand zone',t:'buy'},{p:1.05,nm:'June-low bounce',t:'buy'},
+    {p:0.93,nm:'Weekly base floor',t:'buy',star:1},{p:0.85,nm:'Structural break line',t:'danger'},
+    {p:0.78,nm:'Deep value · wave-D dip',t:'buy'}
+  ],
+  bands: [
+    {lo:0.70,hi:0.85,c:'rgba(224,106,96,.07)'},{lo:0.85,hi:1.13,c:'rgba(93,190,132,.07)'},
+    {lo:1.13,hi:1.30,c:'rgba(122,134,148,.05)'},{lo:1.30,hi:1.58,c:'rgba(95,180,220,.07)'},{lo:1.58,hi:2.90,c:'rgba(122,134,148,.035)'}
+  ],
+  clarity: [
+    {x:'House passes H.R. 3633',d:'Jul 2025',s:'done'},{x:'Senate Banking Committee 15–9',d:'May 2026',s:'done'},
+    {x:'Placed on Senate calendar',d:'Jun 2026',s:'done'},{x:'Ethics / Section 604 resolved',d:'pending',s:'active'},
+    {x:'Senate cloture (needs 7 Dems)',d:'pending',s:'pending'},{x:'House follow-through',d:'pending',s:'pending'},
+    {x:'Presidential signature',d:'pending',s:'pending'}
+  ],
+  tranches: [
+    {z:'$1.08 – 1.13',a:'25%',active:true},{z:'$1.00 – 1.05',a:'25%'},
+    {z:'$0.90 – 0.95',a:'25%'},{z:'$0.78 – 0.85',a:'25%'}
+  ],
+  // ANALYST WATCH — paste the tweet links you want tracked
+  x: [
+    {handle:'@EGRAGcrypto', url:'', text:'(paste a tweet link here)', time:''},
+    {handle:'@ChartNerd',   url:'', text:'(paste a tweet link here)', time:''},
+    {handle:'@CryptoBull2020', url:'', text:'(paste a tweet link here)', time:''}
+  ]
+};
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const MIN=0.70,MAX=2.90,topPos=p=>(1-(p-MIN)/(MAX-MIN))*100;
+const now=()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+const stamp=(id,ok)=>{const e=$('stamp-'+id);if(e)e.textContent= ok?('updated '+now()):'feed offline · last known';};
+async function getJSON(u){const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw 0;return r.json();}
+function lsRead(k,def){try{const v=localStorage.getItem(k);return v===null?def:JSON.parse(v);}catch(e){return def;}}
+function lsWrite(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* ---------- build static parts ---------- */
+const g=$('gauge');
+CONFIG.bands.forEach(b=>{const d=document.createElement('div');d.className='band';d.style.top=topPos(b.hi)+'%';d.style.bottom=(100-topPos(b.lo))+'%';d.style.background=b.c;g.appendChild(d);});
+for(let v=0.75;v<=2.90;v+=0.25){const M=(Math.round(v*100)%50===0);const t=document.createElement('div');t.className='tick'+(M?' major':'');t.style.top=topPos(v)+'%';t.innerHTML='$'+v.toFixed(2)+'<span class="gl"></span>';$('axis').appendChild(t);}
+CONFIG.levels.forEach(l=>{const d=document.createElement('div');d.className='lvl '+l.t;d.style.top=topPos(l.p)+'%';d.innerHTML='<span class="ln"></span><span class="px">$'+l.p.toFixed(2)+'</span><span class="nm">'+l.nm+'</span>'+(l.star?'<span class="st">★</span>':'');g.appendChild(d);});
+const needle=document.createElement('div');needle.className='needle';needle.id='needle';needle.innerHTML='<span class="dot"></span><span class="bar"></span><span class="tag" id="needle-tag">$1.13</span>';g.appendChild(needle);
+function placeNeedle(p){needle.style.top=topPos(Math.max(MIN,Math.min(MAX,p)))+'%';$('needle-tag').textContent='$'+p.toFixed(2);}
+
+const doneState=lsRead('xw_clarity',{});
+$('clarity').innerHTML=CONFIG.clarity.map((m,i)=>{const s=doneState[i]||m.s;return '<div class="ms '+s+'" data-i="'+i+'"><span class="node"></span><span class="txt">'+m.x+'</span><span class="dt">'+m.d+'</span></div>';}).join('');
+$('clarity').querySelectorAll('.ms .node').forEach(node=>node.addEventListener('click',()=>{const row=node.parentElement;const i=row.dataset.i;row.className='ms '+(row.classList.contains('done')?(CONFIG.clarity[i].s):'done');doneState[i]=row.classList.contains('done')?'done':CONFIG.clarity[i].s;lsWrite('xw_clarity',doneState);}));
+
+const fillState=lsRead('xw_tranches',{});
+$('plan').innerHTML=CONFIG.tranches.map((t,i)=>{const f=fillState[i];return '<div class="tr '+(f?'filled':(t.active?'active':''))+'" data-i="'+i+'"><span class="tnum">T'+(i+1)+'</span><span class="zone">'+t.z+'</span><span class="alloc">'+t.a+'</span><span class="pill">'+(f?'filled':(t.active?'in range':'waiting'))+'</span></div>';}).join('');
+$('plan').querySelectorAll('.tr .pill').forEach(p=>p.addEventListener('click',()=>{const row=p.parentElement;const i=row.dataset.i;const f=!fillState[i];fillState[i]=f;lsWrite('xw_tranches',fillState);row.className='tr '+(f?'filled':(CONFIG.tranches[i].active?'active':''));p.textContent=f?'filled':(CONFIG.tranches[i].active?'in range':'waiting');}));
+
+function renderX(filter){const cards=CONFIG.x.filter(c=>filter==='all'||c.handle===filter);
+  $('xcards').innerHTML=cards.map(c=>'<div class="xcard"><div class="xhead"><span class="xhandle">'+c.handle+'</span><span class="xtime">'+(c.time||'')+'</span></div><div class="xbody">'+(c.text||'—')+'</div>'+(c.url?'<a class="xlink" href="'+c.url+'" target="_blank" rel="noopener">↗ view on X</a>':'')+'</div>').join('');}
+const xf=$('xfilter');[...new Set(CONFIG.x.map(c=>c.handle))].forEach(h=>{const o=document.createElement('option');o.value=h;o.textContent=h;xf.appendChild(o);});
+xf.addEventListener('change',()=>renderX(xf.value));renderX('all');
+
+$('x-dex').textContent=CONFIG.manual.dexVolume;$('h-pct').textContent=CONFIG.manual.holderPct;$('h-add').textContent=CONFIG.manual.holderAdd6mo;
+
+/* countdown */
+(function(){const d=Math.max(0,Math.ceil((new Date(CONFIG.recessDate)-new Date())/864e5));$('countdown').textContent='≈'+d;})();
+
+/* ---------- live feeds ---------- */
+async function loadPrice(){try{const j=await getJSON('/api/price');const p=j.price;$('price').textContent='$'+p.toFixed(2);const c=j.change24h;const el=$('chg');el.className='chg '+(c<0?'neg':'pos');el.innerHTML=(c<0?'▾ ':'▴ ')+Math.abs(c).toFixed(1)+'%&nbsp; 24h';placeNeedle(p);stamp('price',true);}catch(e){placeNeedle(CONFIG.fallback.price);stamp('price',false);}}
+async function loadXrpl(){try{const j=await getJSON('/api/xrpl');if(j.ledgerIndex)$('x-ledger').textContent=j.ledgerIndex.toLocaleString();if(j.escrowXrp)$('x-escrow').textContent=(j.escrowXrp/1e9).toFixed(2)+'B';
+  const nu=new Date();nu.setMonth(nu.getMonth()+1,1);$('x-unlock-date').textContent='~'+nu.toLocaleDateString([], {month:'short',day:'numeric'});
+  stamp('xrpl',true);}catch(e){stamp('xrpl',false);}}
+async function loadDeriv(){try{const j=await getJSON('/api/derivatives');
+  if(j.funding!=null)$('d-funding').textContent=(j.funding*100).toFixed(3)+'%'; else $('d-funding').textContent=CONFIG.fallback.funding;
+  if(j.openInterest!=null)$('d-oi').textContent='$'+(j.openInterest/1e9).toFixed(2)+'B'; else $('d-oi').textContent=CONFIG.fallback.oi;
+  if(j.etfFlow!=null){const e=$('d-etf');e.textContent=(j.etfFlow<0?'−$':'$')+Math.abs(j.etfFlow/1e6).toFixed(1)+'M';e.className='v '+(j.etfFlow<0?'neg':'pos');}
+  let longPct=j.longPct, shortPct=j.shortPct;
+  if(longPct==null && j.longShortRatio!=null){const r=j.longShortRatio;longPct=r/(1+r)*100;shortPct=100-longPct;}
+  if(longPct==null){const r=CONFIG.fallback.ls;longPct=r/(1+r)*100;shortPct=100-longPct;}
+  const r=(longPct/shortPct);$('d-ls').textContent=r.toFixed(2);
+  $('ls-long').style.width=longPct.toFixed(0)+'%';$('ls-short').style.width=shortPct.toFixed(0)+'%';
+  $('ls-long-pct').textContent=longPct.toFixed(0)+'%';$('ls-short-pct').textContent=shortPct.toFixed(0)+'%';
+  stamp('deriv',true);}catch(e){stamp('deriv',false);}}
+async function loadOdds(){try{const j=await getJSON('/api/odds');if(j.yesPct!=null){$('odds').textContent=j.yesPct+'%';$('odds-fill').style.width=j.yesPct+'%';}stamp('odds',true);}catch(e){$('stamp-odds').textContent='feed offline';}}
+async function loadBill(){try{const j=await getJSON('/api/bill');if(j.action){$('bill-action').textContent=j.action;$('bill-date').textContent='· '+j.date;}$('stamp-bill').textContent='updated '+now();}catch(e){$('stamp-bill').textContent='2×/day';}}
+
+function startFeed(fn,min){fn();setInterval(fn,min*60000);}
+startFeed(loadPrice,CONFIG.refreshMin.price);
+startFeed(loadXrpl,CONFIG.refreshMin.xrpl);
+startFeed(loadDeriv,CONFIG.refreshMin.deriv);
+startFeed(loadOdds,CONFIG.refreshMin.odds);
+startFeed(loadBill,CONFIG.refreshMin.bill);
+</script>
+</body>
+</html>
