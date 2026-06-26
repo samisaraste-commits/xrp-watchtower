@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>window.twttr=(function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],t=window.twttr||{};if(d.getElementById(id))return t;js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);t._e=[];t.ready=function(f){t._e.push(f);};return t;}(document,"script","twitter-wjs"));</script>
 <style>
   :root{
     --bg:#08090d;--surface:#0d0f15;--accent:#5FB4DC;--accent-bright:#8AD4F5;--accent-dim:rgba(95,180,220,.5);
@@ -110,11 +111,9 @@
   .xsel select{background:var(--bg);color:var(--text);border:1px solid var(--hair);border-radius:8px;padding:7px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;flex:1}
   .xsel .hint{font-size:9px;color:var(--dim)}
   .xcard{border:1px solid var(--hair);border-radius:10px;padding:11px 12px;margin-bottom:10px}
-  .xcard:last-child{margin-bottom:0}
-  .xhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .xhandle{font-size:11px;font-weight:600;color:var(--accent)}.xtime{font-size:9px;color:var(--dim)}
-  .xbody{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
-  .xlink{font-size:9.5px;color:var(--accent-dim);margin-top:7px;display:inline-block;text-decoration:none}
+  .xcard .xhandle{font-size:11px;font-weight:600;color:var(--accent)}
+  .xcard .xbody{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic;margin-top:6px}
+  .twitter-tweet{margin:0 0 10px !important}
 
   footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--hair);font-size:10px;color:var(--dim);line-height:1.7}
   @media (max-width:860px){.grid{grid-template-columns:1fr}.gauge{margin-left:40px}.dgrid{grid-template-columns:1fr}}
@@ -170,11 +169,11 @@
           <div class="d"><div class="k">DEX volume 24h</div><div class="v" id="x-dex">$12.4M</div><div class="n">manual</div></div>
         </div>
 
-        <div class="subrow"><span class="sub">Derivatives — Coinglass</span><span class="stamp" id="stamp-deriv">connecting…</span></div>
+        <div class="subrow"><span class="sub">Derivatives — Binance</span><span class="stamp" id="stamp-deriv">connecting…</span></div>
         <div class="dgrid">
           <div class="d"><div class="k">Funding rate</div><div class="v" id="d-funding">−0.004%</div><div class="n">perp</div></div>
           <div class="d"><div class="k">Open interest</div><div class="v" id="d-oi">$1.02B</div><div class="n">all exch.</div></div>
-          <div class="d"><div class="k">XRP ETF flow</div><div class="v neg" id="d-etf">−$5.3M</div><div class="n">last session</div></div>
+          <div class="d"><div class="k">XRP ETF flow</div><div class="v neg" id="d-etf">−$5.3M</div><div class="n">manual</div></div>
           <div class="d"><div class="k">L/S ratio</div><div class="v" id="d-ls">0.41</div><div class="n">long ÷ short</div></div>
         </div>
         <div class="lswrap">
@@ -195,17 +194,17 @@
       </div>
 
       <div class="panel">
-        <div class="panel-h"><div class="eyebrow">Analyst watch — X</div><div class="meta">manual curate</div></div>
+        <div class="panel-h"><div class="eyebrow">Analyst watch — X</div><div class="meta">live tweets</div></div>
         <div class="xsel">
           <select id="xfilter"><option value="all">All analysts</option></select>
-          <span class="hint">edit in CONFIG.x</span>
+          <span class="hint">add links in CONFIG.x</span>
         </div>
         <div id="xcards"></div>
       </div>
     </div>
   </div>
 
-  <footer id="foot">Indicative only, not financial advice · price: CoinGecko · on-chain: XRPL public servers · derivatives: Coinglass · odds: Polymarket · bill: Congress.gov · X cards: manual</footer>
+  <footer id="foot">Indicative only, not financial advice · price: CoinGecko · on-chain: XRPL public servers · derivatives: Binance · odds: Polymarket · bill: Congress.gov · X: live embeds</footer>
 </div>
 
 <script>
@@ -214,17 +213,10 @@
    ============================================================ */
 const CONFIG = {
   polymarketSlug: 'clarity-act-signed-into-law-in-2026',
-  recessDate: '2026-08-03',          // est. deadline for countdown
+  recessDate: '2026-08-03',
   refreshMin: { price:5, xrpl:5, deriv:20, odds:5, bill:720 },
 
-  // manual values (shown until/unless a live feed overrides them)
-  manual: {
-    dexVolume:'$12.4M',
-    holderPct:'74.1%',
-    holderAdd6mo:'+1.53B'
-  },
-
-  // fallback values if a live feed is unreachable
+  manual: { dexVolume:'$12.4M', holderPct:'74.1%', holderAdd6mo:'+1.53B' },
   fallback: { price:1.13, change:-2.1, odds:48, funding:'−0.004%', oi:'$1.02B', etf:'−$5.3M', ls:0.41 },
 
   levels: [
@@ -250,11 +242,13 @@ const CONFIG = {
     {z:'$1.08 – 1.13',a:'25%',active:true},{z:'$1.00 – 1.05',a:'25%'},
     {z:'$0.90 – 0.95',a:'25%'},{z:'$0.78 – 0.85',a:'25%'}
   ],
-  // ANALYST WATCH — paste the tweet links you want tracked
+
+  // ANALYST WATCH — paste a full tweet link into each url. The real tweet shows up.
+  // To get a link: open the tweet on X → Share → Copy link.  Add more lines if you want.
   x: [
-    {handle:'@EGRAGcrypto', url:'', text:'(paste a tweet link here)', time:''},
-    {handle:'@ChartNerd',   url:'', text:'(paste a tweet link here)', time:''},
-    {handle:'@CryptoBull2020', url:'', text:'(paste a tweet link here)', time:''}
+    {handle:'@EGRAGcrypto', url:''},
+    {handle:'@ChartNerd', url:''},
+    {handle:'@CryptoBull2020', url:''}
   ]
 };
 
@@ -283,14 +277,19 @@ const fillState=lsRead('xw_tranches',{});
 $('plan').innerHTML=CONFIG.tranches.map((t,i)=>{const f=fillState[i];return '<div class="tr '+(f?'filled':(t.active?'active':''))+'" data-i="'+i+'"><span class="tnum">T'+(i+1)+'</span><span class="zone">'+t.z+'</span><span class="alloc">'+t.a+'</span><span class="pill">'+(f?'filled':(t.active?'in range':'waiting'))+'</span></div>';}).join('');
 $('plan').querySelectorAll('.tr .pill').forEach(p=>p.addEventListener('click',()=>{const row=p.parentElement;const i=row.dataset.i;const f=!fillState[i];fillState[i]=f;lsWrite('xw_tranches',fillState);row.className='tr '+(f?'filled':(CONFIG.tranches[i].active?'active':''));p.textContent=f?'filled':(CONFIG.tranches[i].active?'in range':'waiting');}));
 
-function renderX(filter){const cards=CONFIG.x.filter(c=>filter==='all'||c.handle===filter);
-  $('xcards').innerHTML=cards.map(c=>'<div class="xcard"><div class="xhead"><span class="xhandle">'+c.handle+'</span><span class="xtime">'+(c.time||'')+'</span></div><div class="xbody">'+(c.text||'—')+'</div>'+(c.url?'<a class="xlink" href="'+c.url+'" target="_blank" rel="noopener">↗ view on X</a>':'')+'</div>').join('');}
+function renderX(filter){
+  const cards=CONFIG.x.filter(c=>filter==='all'||c.handle===filter);
+  $('xcards').innerHTML=cards.map(c=>{
+    if(!c.url) return '<div class="xcard"><span class="xhandle">'+c.handle+'</span><div class="xbody">No tweet link yet — paste one into CONFIG.x</div></div>';
+    return '<blockquote class="twitter-tweet" data-theme="dark" data-dnt="true"><a href="'+c.url+'"></a></blockquote>';
+  }).join('');
+  if(window.twttr) twttr.ready(t=>t.widgets.load($('xcards')));
+}
 const xf=$('xfilter');[...new Set(CONFIG.x.map(c=>c.handle))].forEach(h=>{const o=document.createElement('option');o.value=h;o.textContent=h;xf.appendChild(o);});
 xf.addEventListener('change',()=>renderX(xf.value));renderX('all');
 
 $('x-dex').textContent=CONFIG.manual.dexVolume;$('h-pct').textContent=CONFIG.manual.holderPct;$('h-add').textContent=CONFIG.manual.holderAdd6mo;
 
-/* countdown */
 (function(){const d=Math.max(0,Math.ceil((new Date(CONFIG.recessDate)-new Date())/864e5));$('countdown').textContent='≈'+d;})();
 
 /* ---------- live feeds ---------- */
@@ -301,7 +300,6 @@ async function loadXrpl(){try{const j=await getJSON('/api/xrpl');if(j.ledgerInde
 async function loadDeriv(){try{const j=await getJSON('/api/derivatives');
   if(j.funding!=null)$('d-funding').textContent=(j.funding*100).toFixed(3)+'%'; else $('d-funding').textContent=CONFIG.fallback.funding;
   if(j.openInterest!=null)$('d-oi').textContent='$'+(j.openInterest/1e9).toFixed(2)+'B'; else $('d-oi').textContent=CONFIG.fallback.oi;
-  if(j.etfFlow!=null){const e=$('d-etf');e.textContent=(j.etfFlow<0?'−$':'$')+Math.abs(j.etfFlow/1e6).toFixed(1)+'M';e.className='v '+(j.etfFlow<0?'neg':'pos');}
   let longPct=j.longPct, shortPct=j.shortPct;
   if(longPct==null && j.longShortRatio!=null){const r=j.longShortRatio;longPct=r/(1+r)*100;shortPct=100-longPct;}
   if(longPct==null){const r=CONFIG.fallback.ls;longPct=r/(1+r)*100;shortPct=100-longPct;}
