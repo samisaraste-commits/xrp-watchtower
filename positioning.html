@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchtower · Who is buying and selling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08090d;--surface:#0d0f15;--accent:#5FB4DC;--accent-bright:#8AD4F5;
+    --buy:#5DBE84;--stress:#E06A60;--text:#d8e2ea;--muted:#7a8694;--dim:#4f5864;
+    --hair:rgba(95,180,220,.12);--hair-soft:rgba(255,255,255,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace}
+  body{padding:28px 22px 40px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600}
+  .sub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  header{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end;padding-bottom:18px;border-bottom:1px solid var(--hair);margin-bottom:18px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{border:1px solid var(--hair);background:transparent;color:var(--muted);padding:7px 12px;border-radius:20px;font:500 11px 'JetBrains Mono',monospace;cursor:pointer;letter-spacing:.06em;text-transform:uppercase}
+  .tab.on{color:#04222e;background:var(--accent-bright);border-color:var(--accent-bright)}
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+  .help{font-size:12px;color:var(--muted);line-height:1.65;margin:8px 0 14px}
+  .help b{color:var(--text);font-weight:500}
+  .map{display:grid;grid-template-columns:160px 1fr;gap:8px 14px;font-size:12px;line-height:1.45}
+  .map .k{color:var(--accent-bright)}
+  .heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .cell{border:1px solid var(--hair);border-radius:10px;padding:11px;cursor:pointer;background:rgba(255,255,255,.02)}
+  .cell:hover,.cell.on{border-color:var(--accent)}
+  .cell .g{font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .cell .n{font-size:12px;font-weight:600;margin:4px 0}
+  .cell .p{font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1}
+  .cell .m{font-size:10px;color:var(--muted);margin-top:4px}
+  .pill{display:inline-block;margin-top:6px;font-size:9px;letter-spacing:.05em;padding:2px 7px;border-radius:10px;border:1px solid currentColor}
+  .alert{padding:12px 14px;border-radius:10px;border:1px solid var(--hair);background:rgba(95,180,220,.06);font-size:12px;line-height:1.6;margin-bottom:14px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  input,select,button.add{background:var(--bg);color:var(--text);border:1px solid var(--hair);border-radius:8px;padding:8px 10px;font:11px 'JetBrains Mono',monospace}
+  button.add{cursor:pointer;color:var(--accent-bright)}
+  canvas{width:100%;height:230px;display:block;border-radius:8px;border:1px solid var(--hair-soft);background:#07080c}
+  .news a{display:block;color:var(--text);text-decoration:none;font-size:12px;padding:8px 0;border-bottom:1px solid var(--hair-soft)}
+  .news a span{display:block;font-size:10px;color:var(--dim);margin-top:3px}
+  .hidden{display:none}
+  footer{margin-top:20px;font-size:10px;color:var(--dim);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Who is buying and selling</h1>
+      <div class="sub">Plain-English positioning · official US futures census</div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="board">Heatmap</button>
+      <button class="tab" data-tab="detail">One market</button>
+      <button class="tab" data-tab="add">Add a market</button>
+      <button class="tab" data-tab="guide">What the words mean</button>
+      <a class="tab" href="./index.html" style="text-decoration:none">XRP home</a>
+    </div>
+  </header>
+
+  <section id="tab-board">
+    <div class="panel">
+      <div class="eyebrow">This week’s snapshot</div>
+      <div class="alert" id="alert">Loading the official weekly count…</div>
+      <p class="help">Each tile is one market. The big number is <b>how stretched the big bettors are</b> versus the last year. 100 = they have never been more on the “price up” side this year. 0 = never more on the “price down” side. Color is that score — not how expensive the thing is.</p>
+      <div class="heat" id="heat"></div>
+    </div>
+  </section>
+
+  <section id="tab-detail" class="hidden">
+    <div class="panel">
+      <div class="eyebrow">One market, unpacked</div>
+      <div class="toolbar">
+        <select id="pick"></select>
+        <span class="help" id="pick-meta" style="margin:0"></span>
+      </div>
+      <canvas id="chart" width="1100" height="230"></canvas>
+      <p class="help" style="margin-top:10px"><b style="color:#5FB4DC">Blue line</b> = big bettors (funds). <b style="color:#E8A23A">Gold line</b> = businesses hedging. Above the middle = more buyers than sellers. Below = more sellers than buyers.</p>
+      <div class="alert" id="detail-words"></div>
+      <div class="eyebrow" style="margin:16px 0 8px">Recent headlines</div>
+      <div class="news" id="news">News loads after you pick a market.</div>
+    </div>
+  </section>
+
+  <section id="tab-add" class="hidden">
+    <div class="panel">
+      <div class="eyebrow">Add something to your board</div>
+      <p class="help">Type a name. If the US regulator publishes a weekly count for it, it joins the heatmap. Crypto without a big US futures book will say so instead of inventing numbers.</p>
+      <div class="toolbar">
+        <input id="q" placeholder="gold, euro, nasdaq, sol, hbar…" size="36">
+        <button class="add" id="search-btn">Find</button>
+      </div>
+      <div id="search-hits" class="help"></div>
+    </div>
+  </section>
+
+  <section id="tab-guide" class="hidden">
+    <div class="panel">
+      <div class="eyebrow">Plain-English map</div>
+      <p class="help">This is the same idea as the Makarios table, said in everyday words.</p>
+      <div class="map">
+        <div class="k">Long / buyer</div><div>They profit if the price goes <b>up</b>.</div>
+        <div class="k">Short / seller</div><div>They profit if the price goes <b>down</b> — or they are buying insurance.</div>
+        <div class="k">Net</div><div>Buyers minus sellers. Plus = that group is leaning up. Minus = leaning down.</div>
+        <div class="k">Fund managers</div><div>Big speculators. Hedge funds making a directional bet.</div>
+        <div class="k">Institutions</div><div>Businesses using futures as a hedge (miners, farms, banks). Often the other side of the funds.</div>
+        <div class="k">Retailers</div><div>Everyone too small to be named. Least important.</div>
+        <div class="k">Open interest</div><div>How many live bets exist. Bigger book = more activity, not a price forecast.</div>
+        <div class="k">Percentile 0–100</div><div>Where today’s fund-net sits versus the last 52 weeks. Extreme does not mean “sell now.” It means the crowd is crowded.</div>
+        <div class="k">Why Friday?</div><div>The US count is taken Tuesday and published Friday. It is a week old on purpose.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Not financial advice. Positioning is the official US Commitments of Traders file. Headlines are a news search, not a recommendation. Some coins have thin US futures — a small book is a weak signal.</footer>
+</div>
+<script>
+const CATALOG = [
+  {id:'XRP', name:'XRP', group:'Crypto', code:'176740', news:'XRP Ripple'},
+  {id:'BTC', name:'Bitcoin', group:'Crypto', code:'133741', news:'Bitcoin'},
+  {id:'ETH', name:'Ether', group:'Crypto', code:'146021', news:'Ethereum'},
+  {id:'SOL', name:'Solana', group:'Crypto', code:'177741', news:'Solana'},
+  {id:'XLM', name:'Stellar', group:'Crypto', code:'173LM2', news:'Stellar XLM'},
+  {id:'HBAR', name:'Hedera', group:'Crypto', code:'180LM4', news:'Hedera HBAR'},
+  {id:'GOLD', name:'Gold', group:'Metals', code:'088691', news:'gold price'},
+  {id:'SILVER', name:'Silver', group:'Metals', code:'084691', news:'silver price'},
+  {id:'COPPER', name:'Copper', group:'Metals', code:'085692', news:'copper price'},
+  {id:'PLAT', name:'Platinum', group:'Metals', code:'076651', news:'platinum'},
+  {id:'PALL', name:'Palladium', group:'Metals', code:'075651', news:'palladium'},
+  {id:'WTI', name:'US crude oil', group:'Energy', code:'067651', news:'crude oil WTI'},
+  {id:'NG', name:'Natural gas', group:'Energy', code:'023651', news:'natural gas'},
+  {id:'CORN', name:'Corn', group:'Grains', code:'002602', news:'corn futures'},
+  {id:'SOY', name:'Soybeans', group:'Grains', code:'005602', news:'soybean futures'},
+  {id:'WHEAT', name:'Wheat', group:'Grains', code:'001602', news:'wheat futures'},
+  {id:'ES', name:'S&P 500', group:'Indexes', code:'13874A', news:'S&P 500'},
+  {id:'NQ', name:'Nasdaq 100', group:'Indexes', code:'209742', news:'Nasdaq'},
+  {id:'YM', name:'Dow Jones', group:'Indexes', code:'124603', news:'Dow Jones'},
+  {id:'RTY', name:'Russell 2000', group:'Indexes', code:'239742', news:'Russell 2000'},
+  {id:'VIX', name:'Fear index (VIX)', group:'Indexes', code:'1170E1', news:'VIX volatility'},
+  {id:'EUR', name:'Euro vs dollar', group:'Currencies', code:'099741', news:'EUR USD'},
+  {id:'JPY', name:'Yen vs dollar', group:'Currencies', code:'097741', news:'USD JPY'},
+  {id:'GBP', name:'Pound vs dollar', group:'Currencies', code:'096742', news:'GBP USD'},
+  {id:'DXY', name:'US dollar basket', group:'Currencies', code:'098662', news:'US dollar index'},
+  {id:'TY', name:'US 10-year yield', group:'Rates', code:'043602', news:'10 year treasury'}
+];
+
+const BASE='https://publicreporting.cftc.gov/resource/6dca-aqww.json';
+const STATE={};
+const $ = id => document.getElementById(id);
+
+function extraIds(){ try{return JSON.parse(localStorage.getItem('xw_extra')||'[]');}catch(e){return[];} }
+function saveExtra(ids){ localStorage.setItem('xw_extra', JSON.stringify(ids)); }
+function activeCatalog(){
+  const extra=new Set(extraIds());
+  const core=['XRP','BTC','ETH','SOL','XLM','HBAR','GOLD','SILVER','COPPER','WTI','CORN','SOY','WHEAT','ES','NQ','YM','EUR','DXY'];
+  return CATALOG.filter(m => core.includes(m.id) || extra.has(m.id));
+}
+
+function nfmt(n){const a=Math.abs(n),s=n<0?'−':''; if(a>=1e6)return s+(a/1e6).toFixed(1)+'M'; if(a>=1000)return s+Math.round(a/1000)+'k'; return (n<0?'−':'')+Math.round(Math.abs(n));}
+function rank(arr,v){const s=[...arr].sort((a,b)=>a-b); let lo=0,hi=s.length; while(lo<hi){const m=(lo+hi)>>1; if(s[m]<=v)lo=m+1; else hi=m;} return s.length<=1?50:Math.round(100*(lo-1)/Math.max(1,s.length-1));}
+function tone(p){ if(p>=80) return {bg:'rgba(93,190,132,.16)',fg:'var(--buy)',w:'very crowded on the up side'}; if(p<=20) return {bg:'rgba(224,106,96,.16)',fg:'var(--stress)',w:'very crowded on the down side'}; return {bg:'rgba(255,255,255,.03)',fg:'var(--text)',w:'not an extreme'}; }
+
+async function pull(code){
+  const u=BASE+'?cftc_contract_market_code='+encodeURIComponent(code)
+    +'&$order='+encodeURIComponent('report_date_as_yyyy_mm_dd DESC')+'&$limit=55'
+    +'&$select='+encodeURIComponent('report_date_as_yyyy_mm_dd,open_interest_all,noncomm_positions_long_all,noncomm_positions_short_all,comm_positions_long_all,comm_positions_short_all');
+  const r=await fetch(u,{cache:'no-store'});
+  if(!r.ok) throw 0;
+  const rows=await r.json();
+  return rows.map(x=>{
+    const fl=+x.noncomm_positions_long_all||0, fs=+x.noncomm_positions_short_all||0;
+    const cl=+x.comm_positions_long_all||0, cs=+x.comm_positions_short_all||0;
+    return {date:x.report_date_as_yyyy_mm_dd.slice(0,10), oi:+x.open_interest_all||0, spec:fl-fs, comm:cl-cs};
+  }).reverse();
+}
+
+function draw(hist){
+  const c=$('chart'), ctx=c.getContext('2d'), W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  if(!hist||hist.length<2) return;
+  const spec=hist.map(r=>r.spec), comm=hist.map(r=>r.comm);
+  const mn=Math.min(0,...spec,...comm), mx=Math.max(0,...spec,...comm);
+  const x0=42,x1=W-8,y0=12,y1=H-20;
+  const x=i=>x0+(x1-x0)*i/(hist.length-1);
+  const y=v=>y1-(y1-y0)*((v-mn)/((mx-mn)||1));
+  ctx.strokeStyle='rgba(216,226,234,.2)'; ctx.beginPath(); ctx.moveTo(x0,y(0)); ctx.lineTo(x1,y(0)); ctx.stroke();
+  function line(a,col){ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2;a.forEach((v,i)=>{const X=x(i),Y=y(v);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.stroke();}
+  line(spec,'#5FB4DC'); line(comm,'#E8A23A');
+  ctx.fillStyle='#7a8694'; ctx.font='11px JetBrains Mono';
+  ctx.fillText(nfmt(mx),4,y0+8); ctx.fillText(nfmt(mn),4,y1);
+  ctx.fillText(hist[0].date.slice(5), x0, H-6);
+  ctx.fillText(hist.at(-1).date.slice(5), x1-46, H-6);
+}
+
+async function news(q){
+  const box=$('news'); box.textContent='Looking up headlines…';
+  try{
+    const r=await fetch('/api/news?q='+encodeURIComponent(q),{cache:'no-store'});
+    const j=await r.json();
+    if(!j.items||!j.items.length) throw 0;
+    box.innerHTML=j.items.map(i=>'<a href="'+i.link+'" target="_blank" rel="noopener">'+i.title+'<span>'+i.date+'</span></a>').join('');
+  }catch(e){
+    box.innerHTML='<a href="https://news.google.com/search?q='+encodeURIComponent(q)+'" target="_blank" rel="noopener">Open a Google News search for '+q+'</a>';
+  }
+}
+
+function words(row){
+  const side = row.last.spec>=0 ? 'betting the price will rise' : 'betting the price will fall';
+  const move = row.wow===0 ? 'did not change much this week' : (row.wow>0? 'added to that bet this week':'cut that bet this week');
+  return '<b>'+row.m.name+'</b>: the big bettors are '+side+' ('+nfmt(row.last.spec)+' contracts net). They '+move+' ('+(row.wow>=0?'+':'')+nfmt(row.wow)+'). Businesses on the other side are net '+nfmt(row.last.comm)+'. Stretch score vs the last year: <b>'+row.pct+' out of 100</b> — '+tone(row.pct).w+'. This is a headcount, not a crystal ball.';
+}
+
+function show(id){
+  const row=STATE.list.find(x=>x.m.id===id); if(!row) return;
+  $('pick').value=id;
+  document.querySelectorAll('.cell').forEach(el=>el.classList.toggle('on', el.dataset.id===id));
+  $('pick-meta').textContent='Count date '+row.last.date+' · live bets in the book: '+nfmt(row.last.oi);
+  draw(row.hist);
+  $('detail-words').innerHTML=words(row);
+  news(row.m.news);
+}
+
+function paint(){
+  const list=STATE.list;
+  $('heat').innerHTML=list.map(row=>{
+    const t=tone(row.pct);
+    return '<div class="cell" data-id="'+row.m.id+'" style="background:'+t.bg+'"><div class="g">'+row.m.group+'</div><div class="n">'+row.m.name+'</div><div class="p" style="color:'+t.fg+'">'+row.pct+'</div><div class="m">bettors net '+nfmt(row.last.spec)+' · week '+(row.wow>=0?'+':'')+nfmt(row.wow)+'</div><div class="pill" style="color:'+t.fg+'">'+t.w+'</div></div>';
+  }).join('');
+  $('heat').onclick=e=>{const c=e.target.closest('.cell'); if(!c) return; document.querySelector('[data-tab=detail]').click(); show(c.dataset.id);};
+  const pick=$('pick');
+  pick.innerHTML=list.map(r=>'<option value="'+r.m.id+'">'+r.m.group+' · '+r.m.name+'</option>').join('');
+  pick.onchange=()=>show(pick.value);
+  const xrp=list.find(r=>r.m.id==='XRP');
+  const gold=list.find(r=>r.m.id==='GOLD');
+  const asOf=list[0]?.last.date || '—';
+  let a='Official count as of <b>'+asOf+'</b> (published the following Friday). ';
+  if(xrp) a+='XRP bettors '+(xrp.wow>=0?'added ':'cut ')+nfmt(Math.abs(xrp.wow))+' this week and sit at <b>'+xrp.pct+' out of 100</b> for the year. ';
+  if(gold) a+='Gold bettors are at <b>'+gold.pct+' / 100</b>.';
+  $('alert').innerHTML=a;
+}
+
+async function loadAll(){
+  const jobs=activeCatalog().map(async m=>{
+    try{
+      const hist=await pull(m.code);
+      if(hist.length<8) return null;
+      const last=hist.at(-1), prev=hist.at(-2);
+      return {m, hist, last, wow:last.spec-prev.spec, pct:rank(hist.map(h=>h.spec), last.spec)};
+    }catch(e){return null;}
+  });
+  STATE.list=(await Promise.all(jobs)).filter(Boolean);
+  if(!STATE.list.length){$('alert').textContent='Could not reach the official US file. Refresh, or deploy this page on Vercel.'; return;}
+  paint(); show(STATE.list.find(x=>x.m.id==='XRP')?.m.id || STATE.list[0].m.id);
+}
+
+document.querySelectorAll('.tab[data-tab]').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('.tab[data-tab]').forEach(b=>b.classList.toggle('on', b===btn));
+  ['board','detail','add','guide'].forEach(id=>$('tab-'+id).classList.toggle('hidden', id!==btn.dataset.tab));
+});
+
+$('search-btn').onclick=()=>{
+  const q=$('q').value.trim().toLowerCase();
+  const hits=CATALOG.filter(m=> (m.name+' '+m.id+' '+m.group).toLowerCase().includes(q));
+  const box=$('search-hits');
+  if(!q){box.textContent='Type a few letters first.'; return;}
+  if(!hits.length){box.textContent='No official US futures count under that name. Try gold, euro, nasdaq, sol…'; return;}
+  box.innerHTML=hits.map(m=>'<div style="margin:8px 0">'+m.group+' · <b>'+m.name+'</b> <button class="add" data-add="'+m.id+'">Add to board</button></div>').join('');
+  box.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{
+    const ids=extraIds(); if(!ids.includes(b.dataset.add)) ids.push(b.dataset.add); saveExtra(ids);
+    b.textContent='Added'; loadAll();
+  });
+};
+
+loadAll();
+</script>
+</body>
+</html>
