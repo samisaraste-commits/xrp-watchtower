@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Watchtower · Who is buying and selling</title>
+<title>Watchtower 33</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -45,6 +45,12 @@
   .news a{display:block;color:var(--text);text-decoration:none;font-size:12px;padding:8px 0;border-bottom:1px solid var(--hair-soft)}
   .news a span{display:block;font-size:10px;color:var(--dim);margin-top:3px}
   .hidden{display:none}
+  .price-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:8px 0 16px}
+  .px-name{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .px-big{font-family:'Cormorant Garamond',serif;font-size:58px;font-weight:600;line-height:.9;color:#eef5fb}
+  .px-chg{font-size:14px;margin-top:6px}
+  .px-chg.pos{color:var(--buy)}.px-chg.neg{color:var(--stress)}
+  .px-src{font-size:10px;color:var(--dim);margin-top:4px}
   footer{margin-top:20px;font-size:10px;color:var(--dim);line-height:1.7}
 </style>
 </head>
@@ -52,15 +58,15 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Who is buying and selling</h1>
-      <div class="sub">Plain-English positioning · official US futures census</div>
+      <h1>Watchtower 33</h1>
+      <div class="sub">Heatmap first · click a market for price + who is buying</div>
     </div>
     <div class="tabs">
       <button class="tab on" data-tab="board">Heatmap</button>
       <button class="tab" data-tab="detail">One market</button>
       <button class="tab" data-tab="add">Add a market</button>
       <button class="tab" data-tab="guide">What the words mean</button>
-      <a class="tab" href="./index.html" style="text-decoration:none">XRP home</a>
+      <a class="tab" href="./xrp.html" style="text-decoration:none">XRP ladder</a>
     </div>
   </header>
 
@@ -75,11 +81,21 @@
 
   <section id="tab-detail" class="hidden">
     <div class="panel">
-      <div class="eyebrow">One market, unpacked</div>
       <div class="toolbar">
         <select id="pick"></select>
         <span class="help" id="pick-meta" style="margin:0"></span>
       </div>
+      <div class="price-head">
+        <div>
+          <div class="px-name" id="px-name">—</div>
+          <div class="px-big" id="px-big">—</div>
+          <div class="px-chg" id="px-chg"></div>
+          <div class="px-src" id="px-src">live price</div>
+        </div>
+      </div>
+      <div class="eyebrow">Price over the last month</div>
+      <canvas id="price-chart" width="1100" height="180" style="height:180px;margin:8px 0 18px"></canvas>
+      <div class="eyebrow">Who is buying and selling</div>
       <canvas id="chart" width="1100" height="230"></canvas>
       <p class="help" style="margin-top:10px"><b style="color:#5FB4DC">Blue line</b> = big bettors (funds). <b style="color:#E8A23A">Gold line</b> = businesses hedging. Above the middle = more buyers than sellers. Below = more sellers than buyers.</p>
       <div class="alert" id="detail-words"></div>
@@ -91,7 +107,7 @@
   <section id="tab-add" class="hidden">
     <div class="panel">
       <div class="eyebrow">Add something to your board</div>
-      <p class="help">Type a name. If the US regulator publishes a weekly count for it, it joins the heatmap. Crypto without a big US futures book will say so instead of inventing numbers.</p>
+      <p class="help">Type a name. If the US regulator publishes a weekly count for it, it joins the heatmap.</p>
       <div class="toolbar">
         <input id="q" placeholder="gold, euro, nasdaq, sol, hbar…" size="36">
         <button class="add" id="search-btn">Find</button>
@@ -103,22 +119,17 @@
   <section id="tab-guide" class="hidden">
     <div class="panel">
       <div class="eyebrow">Plain-English map</div>
-      <p class="help">This is the same idea as the Makarios table, said in everyday words.</p>
       <div class="map">
         <div class="k">Long / buyer</div><div>They profit if the price goes <b>up</b>.</div>
-        <div class="k">Short / seller</div><div>They profit if the price goes <b>down</b> — or they are buying insurance.</div>
-        <div class="k">Net</div><div>Buyers minus sellers. Plus = that group is leaning up. Minus = leaning down.</div>
-        <div class="k">Fund managers</div><div>Big speculators. Hedge funds making a directional bet.</div>
-        <div class="k">Institutions</div><div>Businesses using futures as a hedge (miners, farms, banks). Often the other side of the funds.</div>
-        <div class="k">Retailers</div><div>Everyone too small to be named. Least important.</div>
-        <div class="k">Open interest</div><div>How many live bets exist. Bigger book = more activity, not a price forecast.</div>
-        <div class="k">Percentile 0–100</div><div>Where today’s fund-net sits versus the last 52 weeks. Extreme does not mean “sell now.” It means the crowd is crowded.</div>
-        <div class="k">Why Friday?</div><div>The US count is taken Tuesday and published Friday. It is a week old on purpose.</div>
+        <div class="k">Short / seller</div><div>They profit if the price goes <b>down</b>.</div>
+        <div class="k">Net</div><div>Buyers minus sellers.</div>
+        <div class="k">Fund managers</div><div>Big speculators making a directional bet.</div>
+        <div class="k">Institutions</div><div>Businesses hedging. Often the other side of the funds.</div>
+        <div class="k">Percentile 0–100</div><div>How stretched fund-net is versus the last year.</div>
       </div>
     </div>
   </section>
-
-  <footer>Not financial advice. Positioning is the official US Commitments of Traders file. Headlines are a news search, not a recommendation. Some coins have thin US futures — a small book is a weak signal.</footer>
+  <footer>Not financial advice.</footer>
 </div>
 <script>
 const CATALOG = [
@@ -149,11 +160,9 @@ const CATALOG = [
   {id:'DXY', name:'US dollar basket', group:'Currencies', code:'098662', news:'US dollar index'},
   {id:'TY', name:'US 10-year yield', group:'Rates', code:'043602', news:'10 year treasury'}
 ];
-
 const BASE='https://publicreporting.cftc.gov/resource/6dca-aqww.json';
 const STATE={};
 const $ = id => document.getElementById(id);
-
 function extraIds(){ try{return JSON.parse(localStorage.getItem('xw_extra')||'[]');}catch(e){return[];} }
 function saveExtra(ids){ localStorage.setItem('xw_extra', JSON.stringify(ids)); }
 function activeCatalog(){
@@ -161,11 +170,9 @@ function activeCatalog(){
   const core=['XRP','BTC','ETH','SOL','XLM','HBAR','GOLD','SILVER','COPPER','WTI','CORN','SOY','WHEAT','ES','NQ','YM','EUR','DXY'];
   return CATALOG.filter(m => core.includes(m.id) || extra.has(m.id));
 }
-
 function nfmt(n){const a=Math.abs(n),s=n<0?'−':''; if(a>=1e6)return s+(a/1e6).toFixed(1)+'M'; if(a>=1000)return s+Math.round(a/1000)+'k'; return (n<0?'−':'')+Math.round(Math.abs(n));}
 function rank(arr,v){const s=[...arr].sort((a,b)=>a-b); let lo=0,hi=s.length; while(lo<hi){const m=(lo+hi)>>1; if(s[m]<=v)lo=m+1; else hi=m;} return s.length<=1?50:Math.round(100*(lo-1)/Math.max(1,s.length-1));}
 function tone(p){ if(p>=80) return {bg:'rgba(93,190,132,.16)',fg:'var(--buy)',w:'very crowded on the up side'}; if(p<=20) return {bg:'rgba(224,106,96,.16)',fg:'var(--stress)',w:'very crowded on the down side'}; return {bg:'rgba(255,255,255,.03)',fg:'var(--text)',w:'not an extreme'}; }
-
 async function pull(code){
   const u=BASE+'?cftc_contract_market_code='+encodeURIComponent(code)
     +'&$order='+encodeURIComponent('report_date_as_yyyy_mm_dd DESC')+'&$limit=55'
@@ -179,7 +186,6 @@ async function pull(code){
     return {date:x.report_date_as_yyyy_mm_dd.slice(0,10), oi:+x.open_interest_all||0, spec:fl-fs, comm:cl-cs};
   }).reverse();
 }
-
 function draw(hist){
   const c=$('chart'), ctx=c.getContext('2d'), W=c.width, H=c.height;
   ctx.clearRect(0,0,W,H);
@@ -197,7 +203,6 @@ function draw(hist){
   ctx.fillText(hist[0].date.slice(5), x0, H-6);
   ctx.fillText(hist.at(-1).date.slice(5), x1-46, H-6);
 }
-
 async function news(q){
   const box=$('news'); box.textContent='Looking up headlines…';
   try{
@@ -209,13 +214,11 @@ async function news(q){
     box.innerHTML='<a href="https://news.google.com/search?q='+encodeURIComponent(q)+'" target="_blank" rel="noopener">Open a Google News search for '+q+'</a>';
   }
 }
-
 function words(row){
   const side = row.last.spec>=0 ? 'betting the price will rise' : 'betting the price will fall';
   const move = row.wow===0 ? 'did not change much this week' : (row.wow>0? 'added to that bet this week':'cut that bet this week');
-  return '<b>'+row.m.name+'</b>: the big bettors are '+side+' ('+nfmt(row.last.spec)+' contracts net). They '+move+' ('+(row.wow>=0?'+':'')+nfmt(row.wow)+'). Businesses on the other side are net '+nfmt(row.last.comm)+'. Stretch score vs the last year: <b>'+row.pct+' out of 100</b> — '+tone(row.pct).w+'. This is a headcount, not a crystal ball.';
+  return '<b>'+row.m.name+'</b>: the big bettors are '+side+' ('+nfmt(row.last.spec)+' contracts net). They '+move+' ('+(row.wow>=0?'+':'')+nfmt(row.wow)+'). Businesses on the other side are net '+nfmt(row.last.comm)+'. Stretch score vs the last year: <b>'+row.pct+' out of 100</b> — '+tone(row.pct).w+'.';
 }
-
 function show(id){
   const row=STATE.list.find(x=>x.m.id===id); if(!row) return;
   $('pick').value=id;
@@ -224,8 +227,8 @@ function show(id){
   draw(row.hist);
   $('detail-words').innerHTML=words(row);
   news(row.m.news);
+  loadQuote(row.m.id, row.m.name);
 }
-
 function paint(){
   const list=STATE.list;
   $('heat').innerHTML=list.map(row=>{
@@ -239,12 +242,11 @@ function paint(){
   const xrp=list.find(r=>r.m.id==='XRP');
   const gold=list.find(r=>r.m.id==='GOLD');
   const asOf=list[0]?.last.date || '—';
-  let a='Official count as of <b>'+asOf+'</b> (published the following Friday). ';
-  if(xrp) a+='XRP bettors '+(xrp.wow>=0?'added ':'cut ')+nfmt(Math.abs(xrp.wow))+' this week and sit at <b>'+xrp.pct+' out of 100</b> for the year. ';
-  if(gold) a+='Gold bettors are at <b>'+gold.pct+' / 100</b>.';
+  let a='Official count as of <b>'+asOf+'</b>. ';
+  if(xrp) a+='XRP bettors sit at <b>'+xrp.pct+' / 100</b>. ';
+  if(gold) a+='Gold bettors sit at <b>'+gold.pct+' / 100</b>.';
   $('alert').innerHTML=a;
 }
-
 async function loadAll(){
   const jobs=activeCatalog().map(async m=>{
     try{
@@ -255,28 +257,74 @@ async function loadAll(){
     }catch(e){return null;}
   });
   STATE.list=(await Promise.all(jobs)).filter(Boolean);
-  if(!STATE.list.length){$('alert').textContent='Could not reach the official US file. Refresh, or deploy this page on Vercel.'; return;}
-  paint(); show(STATE.list.find(x=>x.m.id==='XRP')?.m.id || STATE.list[0].m.id);
+  if(!STATE.list.length){$('alert').textContent='Could not reach the official US file.'; return;}
+  paint();
 }
-
 document.querySelectorAll('.tab[data-tab]').forEach(btn=>btn.onclick=()=>{
   document.querySelectorAll('.tab[data-tab]').forEach(b=>b.classList.toggle('on', b===btn));
   ['board','detail','add','guide'].forEach(id=>$('tab-'+id).classList.toggle('hidden', id!==btn.dataset.tab));
 });
-
 $('search-btn').onclick=()=>{
   const q=$('q').value.trim().toLowerCase();
   const hits=CATALOG.filter(m=> (m.name+' '+m.id+' '+m.group).toLowerCase().includes(q));
   const box=$('search-hits');
   if(!q){box.textContent='Type a few letters first.'; return;}
-  if(!hits.length){box.textContent='No official US futures count under that name. Try gold, euro, nasdaq, sol…'; return;}
+  if(!hits.length){box.textContent='No official US futures count under that name.'; return;}
   box.innerHTML=hits.map(m=>'<div style="margin:8px 0">'+m.group+' · <b>'+m.name+'</b> <button class="add" data-add="'+m.id+'">Add to board</button></div>').join('');
   box.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{
     const ids=extraIds(); if(!ids.includes(b.dataset.add)) ids.push(b.dataset.add); saveExtra(ids);
     b.textContent='Added'; loadAll();
   });
 };
-
+function money(n, id){
+  if(n==null||!isFinite(n)) return '—';
+  const abs=Math.abs(n);
+  const d = abs>=1000?0: abs>=100?2: abs>=1?4:6;
+  const s = n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+  if(id==='JPY') return s;
+  if(id==='TY') return s+'%';
+  return '$'+s;
+}
+function drawPrice(series){
+  const c=$('price-chart'); if(!c) return;
+  const ctx=c.getContext('2d'); const W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  const pts=(series||[]).filter(x=>x && x.p!=null);
+  if(pts.length<2){ctx.fillStyle='#7a8694';ctx.font='12px JetBrains Mono';ctx.fillText('No price history yet',16,H/2);return;}
+  const lo=Math.min(...pts.map(x=>x.p)), hi=Math.max(...pts.map(x=>x.p));
+  const x0=8,x1=W-8,y0=10,y1=H-16;
+  const x=i=>x0+(x1-x0)*i/(pts.length-1);
+  const y=v=>y1-(y1-y0)*((v-lo)/((hi-lo)||1));
+  const up=pts.at(-1).p>=pts[0].p;
+  ctx.beginPath(); ctx.strokeStyle=up?'#5DBE84':'#E06A60'; ctx.lineWidth=2;
+  pts.forEach((pt,i)=>{const X=x(i),Y=y(pt.p); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+  ctx.stroke();
+}
+async function loadQuote(id, name){
+  $('px-name').textContent=name+' · live';
+  $('px-big').textContent='…';
+  $('px-chg').textContent='';
+  $('px-src').textContent='fetching price';
+  try{
+    const r=await fetch('/api/quote?id='+encodeURIComponent(id),{cache:'no-store'});
+    const j=await r.json();
+    if(!j.ok || j.price==null) throw 0;
+    $('px-big').textContent=money(j.price, id);
+    const c=j.change24h;
+    const el=$('px-chg');
+    if(c==null){el.textContent='';}
+    else{
+      el.className='px-chg '+(c<0?'neg':'pos');
+      el.textContent=(c<0?'▾ ':'▴ ')+Math.abs(c).toFixed(2)+'%   day';
+    }
+    $('px-src').textContent=(j.source||'live')+' · last month on the chart below';
+    drawPrice(j.series);
+  }catch(e){
+    $('px-big').textContent='—';
+    $('px-src').textContent='price feed offline — add api/quote.js';
+    drawPrice([]);
+  }
+}
 loadAll();
 </script>
 </body>
