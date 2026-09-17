@@ -3,7 +3,7 @@ const CG = {
   XLM: 'stellar', HBAR: 'hedera-hashgraph'
 };
 const YAHOO = {
-  GOLD: 'GC=F', SILVER: 'SI=F', COPPER: 'HG=F', PLAT: 'PL=F', PALL: 'PA=F',
+  GOLD: 'GC=F', XAUUSD: 'XAUUSD=X', SILVER: 'SI=F', COPPER: 'HG=F', PLAT: 'PL=F', PALL: 'PA=F',
   WTI: 'CL=F', NG: 'NG=F', CORN: 'ZC=F', SOY: 'ZS=F', WHEAT: 'ZW=F',
   ES: 'ES=F', NQ: 'NQ=F', YM: 'YM=F', RTY: 'RTY=F', VIX: '^VIX',
   EUR: 'EURUSD=X', JPY: 'JPY=X', GBP: 'GBPUSD=X', DXY: 'DX-Y.NYB', TY: '^TNX'
