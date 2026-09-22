@@ -69,7 +69,6 @@
       <button class="tab" type="button" onclick="location.href='journal.html'">Journal</button>
     </div>
   </header>
-
   <section id="tab-board">
     <div class="panel">
       <div class="eyebrow">This week’s snapshot</div>
@@ -78,7 +77,6 @@
       <div class="heat" id="heat"></div>
     </div>
   </section>
-
   <section id="tab-detail" class="hidden">
     <div class="panel">
       <div class="toolbar">
@@ -103,7 +101,6 @@
       <div class="news" id="news">News loads after you pick a market.</div>
     </div>
   </section>
-
   <section id="tab-add" class="hidden">
     <div class="panel">
       <div class="eyebrow">Add something to your board</div>
@@ -115,7 +112,6 @@
       <div id="search-hits" class="help"></div>
     </div>
   </section>
-
   <section id="tab-guide" class="hidden">
     <div class="panel">
       <div class="eyebrow">Plain-English map</div>
@@ -140,6 +136,7 @@ const CATALOG = [
   {id:'XLM', name:'Stellar', group:'Crypto', code:'173LM2', news:'Stellar XLM'},
   {id:'HBAR', name:'Hedera', group:'Crypto', code:'180LM4', news:'Hedera HBAR'},
   {id:'GOLD', name:'Gold', group:'Metals', code:'088691', news:'gold price'},
+  {id:'XAUUSD', name:'XAUUSD spot gold', group:'Metals', code:'088691', news:'XAUUSD gold'},
   {id:'SILVER', name:'Silver', group:'Metals', code:'084691', news:'silver price'},
   {id:'COPPER', name:'Copper', group:'Metals', code:'085692', news:'copper price'},
   {id:'PLAT', name:'Platinum', group:'Metals', code:'076651', news:'platinum'},
@@ -167,10 +164,10 @@ function extraIds(){ try{return JSON.parse(localStorage.getItem('xw_extra')||'[]
 function saveExtra(ids){ localStorage.setItem('xw_extra', JSON.stringify(ids)); }
 function activeCatalog(){
   const extra=new Set(extraIds());
-  const core=['XRP','BTC','ETH','SOL','XLM','HBAR','GOLD','SILVER','COPPER','WTI','CORN','SOY','WHEAT','ES','NQ','YM','EUR','DXY'];
+  const core=['XRP','BTC','ETH','SOL','XLM','HBAR','GOLD','XAUUSD','SILVER','COPPER','WTI','CORN','SOY','WHEAT','ES','NQ','YM','EUR','DXY','TY'];
   return CATALOG.filter(m => core.includes(m.id) || extra.has(m.id));
 }
-function nfmt(n){const a=Math.abs(n),s=n<0?'−':''; if(a>=1e6)return s+(a/1e6).toFixed(1)+'M'; if(a>=1000)return s+Math.round(a/1000)+'k'; return (n<0?'−':'')+Math.round(Math.abs(n));}
+function nfmt(n){const a=Math.abs(n),s=n<0?'\u2212':''; if(a>=1e6)return s+(a/1e6).toFixed(1)+'M'; if(a>=1000)return s+Math.round(a/1000)+'k'; return (n<0?'\u2212':'')+Math.round(Math.abs(n));}
 function rank(arr,v){const s=[...arr].sort((a,b)=>a-b); let lo=0,hi=s.length; while(lo<hi){const m=(lo+hi)>>1; if(s[m]<=v)lo=m+1; else hi=m;} return s.length<=1?50:Math.round(100*(lo-1)/Math.max(1,s.length-1));}
 function tone(p){ if(p>=80) return {bg:'rgba(93,190,132,.16)',fg:'var(--buy)',w:'very crowded on the up side'}; if(p<=20) return {bg:'rgba(224,106,96,.16)',fg:'var(--stress)',w:'very crowded on the down side'}; return {bg:'rgba(255,255,255,.03)',fg:'var(--text)',w:'not an extreme'}; }
 async function pull(code){
@@ -208,7 +205,7 @@ function draw(hist){
   ctx.textAlign='right'; ctx.fillText(hist.at(-1).date.slice(5), right, H-8);
 }
 async function news(q){
-  const box=$('news'); box.textContent='Looking up headlines…';
+  const box=$('news'); box.textContent='Looking up headlines\u2026';
   try{
     const r=await fetch('/api/news?q='+encodeURIComponent(q),{cache:'no-store'});
     const j=await r.json();
@@ -221,13 +218,13 @@ async function news(q){
 function words(row){
   const side = row.last.spec>=0 ? 'betting the price will rise' : 'betting the price will fall';
   const move = row.wow===0 ? 'did not change much this week' : (row.wow>0? 'added to that bet this week':'cut that bet this week');
-  return '<b>'+row.m.name+'</b>: the big bettors are '+side+' ('+nfmt(row.last.spec)+' contracts net). They '+move+' ('+(row.wow>=0?'+':'')+nfmt(row.wow)+'). Businesses on the other side are net '+nfmt(row.last.comm)+'. Stretch score vs the last year: <b>'+row.pct+' out of 100</b> — '+tone(row.pct).w+'.';
+  return '<b>'+row.m.name+'</b>: the big bettors are '+side+' ('+nfmt(row.last.spec)+' contracts net). They '+move+' ('+(row.wow>=0?'+':'')+nfmt(row.wow)+'). Businesses on the other side are net '+nfmt(row.last.comm)+'. Stretch score vs the last year: <b>'+row.pct+' out of 100</b> \u2014 '+tone(row.pct).w+'.';
 }
 function show(id){
   const row=STATE.list.find(x=>x.m.id===id); if(!row) return;
   $('pick').value=id;
   document.querySelectorAll('.cell').forEach(el=>el.classList.toggle('on', el.dataset.id===id));
-  $('pick-meta').textContent='Count date '+row.last.date+' · live bets in the book: '+nfmt(row.last.oi);
+  $('pick-meta').textContent='Count date '+row.last.date+' \u00b7 live bets in the book: '+nfmt(row.last.oi);
   draw(row.hist);
   $('detail-words').innerHTML=words(row);
   news(row.m.news);
@@ -237,15 +234,15 @@ function paint(){
   const list=STATE.list;
   $('heat').innerHTML=list.map(row=>{
     const t=tone(row.pct);
-    return '<div class="cell" data-id="'+row.m.id+'" style="background:'+t.bg+'"><div class="g">'+row.m.group+'</div><div class="n">'+row.m.name+'</div><div class="p" style="color:'+t.fg+'">'+row.pct+'</div><div class="m">bettors net '+nfmt(row.last.spec)+' · week '+(row.wow>=0?'+':'')+nfmt(row.wow)+'</div><div class="pill" style="color:'+t.fg+'">'+t.w+'</div></div>';
+    return '<div class="cell" data-id="'+row.m.id+'" style="background:'+t.bg+'"><div class="g">'+row.m.group+'</div><div class="n">'+row.m.name+'</div><div class="p" style="color:'+t.fg+'">'+row.pct+'</div><div class="m">bettors net '+nfmt(row.last.spec)+' \u00b7 week '+(row.wow>=0?'+':'')+nfmt(row.wow)+'</div><div class="pill" style="color:'+t.fg+'">'+t.w+'</div></div>';
   }).join('');
   $('heat').onclick=e=>{const c=e.target.closest('.cell'); if(!c) return; document.querySelector('[data-tab=detail]').click(); show(c.dataset.id);};
   const pick=$('pick');
-  pick.innerHTML=list.map(r=>'<option value="'+r.m.id+'">'+r.m.group+' · '+r.m.name+'</option>').join('');
+  pick.innerHTML=list.map(r=>'<option value="'+r.m.id+'">'+r.m.group+' \u00b7 '+r.m.name+'</option>').join('');
   pick.onchange=()=>show(pick.value);
   const xrp=list.find(r=>r.m.id==='XRP');
   const gold=list.find(r=>r.m.id==='GOLD');
-  const asOf=list[0]?.last.date || '—';
+  const asOf=list[0]?.last.date || '\u2014';
   let a='Official count as of <b>'+asOf+'</b>. ';
   if(xrp) a+='XRP bettors sit at <b>'+xrp.pct+' / 100</b>. ';
   if(gold) a+='Gold bettors sit at <b>'+gold.pct+' / 100</b>.';
@@ -274,14 +271,14 @@ $('search-btn').onclick=()=>{
   const box=$('search-hits');
   if(!q){box.textContent='Type a few letters first.'; return;}
   if(!hits.length){box.textContent='No official US futures count under that name.'; return;}
-  box.innerHTML=hits.map(m=>'<div style="margin:8px 0">'+m.group+' · <b>'+m.name+'</b> <button class="add" data-add="'+m.id+'">Add to board</button></div>').join('');
+  box.innerHTML=hits.map(m=>'<div style="margin:8px 0">'+m.group+' \u00b7 <b>'+m.name+'</b> <button class="add" data-add="'+m.id+'">Add to board</button></div>').join('');
   box.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{
     const ids=extraIds(); if(!ids.includes(b.dataset.add)) ids.push(b.dataset.add); saveExtra(ids);
     b.textContent='Added'; loadAll();
   });
 };
 function money(n, id){
-  if(n==null||!isFinite(n)) return '—';
+  if(n==null||!isFinite(n)) return '\u2014';
   const abs=Math.abs(n);
   const d = abs>=1000?0: abs>=100?2: abs>=1?4:6;
   const s = n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -320,8 +317,8 @@ function drawPrice(series){
   ctx.fillText(px(pts.at(-1).p), x(pts.length-1)+6, y(pts.at(-1).p)-6);
 }
 async function loadQuote(id, name){
-  $('px-name').textContent=name+' · live';
-  $('px-big').textContent='…';
+  $('px-name').textContent=name+' \u00b7 live';
+  $('px-big').textContent='\u2026';
   $('px-chg').textContent='';
   $('px-src').textContent='fetching price';
   try{
@@ -334,13 +331,13 @@ async function loadQuote(id, name){
     if(c==null){el.textContent='';}
     else{
       el.className='px-chg '+(c<0?'neg':'pos');
-      el.textContent=(c<0?'▾ ':'▴ ')+Math.abs(c).toFixed(2)+'%   day';
+      el.textContent=(c<0?'\u25be ':'\u25b4 ')+Math.abs(c).toFixed(2)+'%   day';
     }
-    $('px-src').textContent=(j.source||'live')+' · last month on the chart below';
+    $('px-src').textContent=(j.source||'live')+' \u00b7 last month on the chart below';
     drawPrice(j.series);
   }catch(e){
-    $('px-big').textContent='—';
-    $('px-src').textContent='price feed offline — add api/quote.js';
+    $('px-big').textContent='\u2014';
+    $('px-src').textContent='price feed offline \u2014 add api/quote.js';
     drawPrice([]);
   }
 }
