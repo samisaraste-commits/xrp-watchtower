@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchtower 33 · Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08090d;--surface:#0d0f15;--accent:#5FB4DC;--accent-bright:#8AD4F5;
+    --buy:#5DBE84;--stress:#E06A60;--text:#d8e2ea;--muted:#7a8694;--dim:#4f5864;
+    --hair:rgba(95,180,220,.12);--hair-soft:rgba(255,255,255,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace}
+  body{padding:28px 22px 60px}
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600}
+  .sub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  header{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end;padding-bottom:18px;border-bottom:1px solid var(--hair);margin-bottom:18px}
+  a.back{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}
+  a.back:hover{color:var(--accent-bright)}
+  .strip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+  .stat{background:var(--surface);border:1px solid var(--hair);border-radius:10px;padding:12px}
+  .stat .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .stat .v{font-family:'Cormorant Garamond',serif;font-size:26px;margin-top:4px}
+  .pos{color:var(--buy)}.neg{color:var(--stress)}
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  canvas#eq{width:100%;height:160px;display:block;border-radius:8px;border:1px solid var(--hair-soft);background:#07080c}
+  .help{font-size:12px;color:var(--muted);line-height:1.65;margin-top:10px}
+  .row{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;border:1px solid var(--hair);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.02)}
+  .row:hover,.row.on{border-color:var(--accent)}
+  .thumb{width:72px;height:52px;border-radius:6px;background:#0a0c12;border:1px solid var(--hair-soft);overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .ph{width:100%;height:100%;display:grid;place-items:center;color:var(--dim);font-size:9px}
+  .who{font-size:13px;line-height:1.45}
+  .who b{font-weight:600;color:#eef5fb}
+  .who .when{font-weight:400;color:var(--muted)}
+  .detail{display:none;margin:-2px 0 14px;border:1px solid var(--accent);border-radius:12px;padding:16px;background:#0b0d14}
+  .detail.open{display:block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:4px 0 14px}
+  label.k{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+  .comment{width:100%;background:#07080c;border:1px solid var(--hair);border-radius:8px;padding:12px;font:13px/1.6 'JetBrains Mono',monospace;color:var(--text);margin-bottom:10px;min-height:72px;resize:vertical}
+  .shots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .shot{width:100%;border-radius:8px;border:1px solid var(--hair-soft);background:#07080c;min-height:160px;object-fit:contain;display:block}
+  .shot.empty{min-height:160px;display:grid;place-items:center;color:var(--dim);font-size:11px}
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  button,select,input{background:var(--bg);color:var(--text);border:1px solid var(--hair);border-radius:8px;padding:8px 10px;font:11px 'JetBrains Mono',monospace}
+  button{cursor:pointer;color:var(--accent-bright)}
+  button.ghost{color:var(--muted)}
+  button.danger{color:var(--stress)}
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .full{grid-column:1/-1}
+  .banner{padding:12px 14px;border-radius:10px;border:1px solid var(--hair);background:rgba(224,106,96,.08);font-size:12px;line-height:1.6;margin-bottom:14px}
+  .banner code{color:var(--accent-bright)}
+  footer{margin-top:18px;font-size:10px;color:var(--dim);line-height:1.7}
+  @media(max-width:720px){
+    .strip{grid-template-columns:1fr 1fr}
+    .grid,.form,.shots{grid-template-columns:1fr}
+    h1{font-size:32px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Trade journal</h1>
+      <div class="sub">Closed trades · euros · the line is your pile</div>
+    </div>
+    <a class="back" href="/positioning.html">Back to the board</a>
+  </header>
+  <div id="setup" class="banner" hidden></div>
+  <div class="strip">
+    <div class="stat"><div class="k">Since you started</div><div class="v" id="s-total">—</div></div>
+    <div class="stat"><div class="k">This month</div><div class="v" id="s-month">—</div></div>
+    <div class="stat"><div class="k">Wins / losses</div><div class="v" id="s-wl">—</div></div>
+    <div class="stat"><div class="k">Biggest win</div><div class="v pos" id="s-win">—</div></div>
+    <div class="stat"><div class="k">Biggest loss</div><div class="v neg" id="s-loss">—</div></div>
+  </div>
+  <div class="panel">
+    <div class="eyebrow">Your pile after each finished trade</div>
+    <canvas id="eq" width="800" height="160"></canvas>
+  </div>
+  <div class="panel">
+    <div class="eyebrow">Trades</div>
+    <p class="help" style="margin:0 0 12px">Bold name, then the date. Green is money made. Red is money lost. Click a row for the plan, your comment, and both charts.</p>
+    <div id="list"></div>
+    <div class="actions">
+      <button id="btn-add" type="button">Add a trade</button>
+      <button id="btn-import" type="button" class="ghost">Import cTrader file</button>
+      <input id="file" type="file" accept=".csv,.txt,text/csv" hidden>
+    </div>
+  </div>
+  <div class="panel" id="add-box" hidden>
+    <div class="eyebrow">New closed trade</div>
+    <div class="form">
+      <div><label class="k">Market</label><select id="f-mkt">
+        <option>XAUUSD</option><option>Gold</option><option>US 10-year yield</option>
+        <option>XRP</option><option>Bitcoin</option><option>Euro vs dollar</option><option>Other</option>
+      </select></div>
+      <div><label class="k">Date closed</label><input id="f-date" type="date"></div>
+      <div><label class="k">Side</label><select id="f-side"><option>Bought</option><option>Sold</option></select></div>
+      <div><label class="k">Profit or loss €</label><input id="f-pnl" placeholder="240 or -80"></div>
+      <div><label class="k">Money willing to lose €</label><input id="f-risk" placeholder="150"></div>
+      <div><label class="k">Slice of the account</label><input id="f-acc" placeholder="0.8%"></div>
+      <div><label class="k">Entry</label><input id="f-entry"></div>
+      <div><label class="k">Exit</label><input id="f-exit"></div>
+      <div><label class="k">Hold time</label><input id="f-hold" placeholder="4 hours"></div>
+      <div class="full"><label class="k">Plan before you clicked</label><input id="f-plan"></div>
+      <div class="full"><label class="k">What you actually did</label><input id="f-did"></div>
+      <div class="full"><label class="k">Your comment</label><textarea class="comment" id="f-note" placeholder="What you saw."></textarea></div>
+      <div><label class="k">Screenshot 1</label><input id="f-shot" type="file" accept="image/*"></div>
+      <div><label class="k">Screenshot 2</label><input id="f-shot2" type="file" accept="image/*"></div>
+    </div>
+    <div class="actions">
+      <button id="btn-save" type="button">Save this trade</button>
+      <button class="ghost" id="btn-cancel" type="button">Cancel</button>
+    </div>
+  </div>
+  <footer>
+    cTrader has no public web login for trade history. In cTrader: History → Statement → Save as CSV, then Import cTrader file. Net profit is used when the file has it.<br>
+    Pictures stay with the trade in Supabase. One screenshot is optional. Two is the max.
+  </footer>
+</div>
+<script>
+const KEY = 'xw_journal_key';
+let TRADES = [];
+let openId = null;
+const $ = id => document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c]));}
+function money(n){
+  if(n==null||!isFinite(n)) return '—';
+  const s = Math.abs(Math.round(n)).toLocaleString('fi-FI');
+  return (n<0?'−':n>0?'+':'')+'€'+s;
+}
+function headers(){
+  const h = {'content-type':'application/json'};
+  const k = sessionStorage.getItem(KEY);
+  if(k) h['x-journal-key'] = k;
+  return h;
+}
+async function api(method, body, query){
+  const r = await fetch('/api/journal'+(query||''), { method, headers: headers(), body: body?JSON.stringify(body):undefined });
+  return r.json();
+}
+function fileToJpeg(file){
+  return new Promise((resolve,reject)=>{
+    if(!file) return resolve(null);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 1200;
+      let w = img.width, h = img.height;
+      if (w > max) { h = Math.round(h * max / w); w = max; }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+    img.src = url;
+  });
+}
+function drawEq(){
+  const c=$('eq'), ctx=c.getContext('2d'), W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  const ordered=[...TRADES].sort((a,b)=> String(a.closed_on).localeCompare(String(b.closed_on)) || String(a.created_at||'').localeCompare(String(b.created_at||'')));
+  let run=0; const pts=[{p:0}];
+  ordered.forEach(t=>{ run += Number(t.pnl)||0; pts.push({p:run}); });
+  if(pts.length<2){
+    ctx.fillStyle='#7a8694'; ctx.font='12px JetBrains Mono'; ctx.fillText('The line starts after the first closed trade.', 16, H/2);
+    return;
+  }
+  const lo=Math.min(...pts.map(x=>x.p)), hi=Math.max(...pts.map(x=>x.p));
+  const pad=(hi-lo)*0.12||40, mn=lo-pad, mx=hi+pad;
+  const left=64, right=W-12, top=12, bot=H-8;
+  const x=i=>left+(right-left)*i/(pts.length-1);
+  const y=v=>bot-(bot-top)*((v-mn)/((mx-mn)||1));
+  ctx.font='11px JetBrains Mono';
+  [mx,0,mn].forEach(v=>{
+    const Y=y(v);
+    ctx.strokeStyle='rgba(216,226,234,.14)'; ctx.beginPath(); ctx.moveTo(left,Y); ctx.lineTo(right,Y); ctx.stroke();
+    ctx.fillStyle='#8a98a8'; ctx.textAlign='right'; ctx.fillText(money(v), left-6, Y+4);
+  });
+  ctx.beginPath(); ctx.strokeStyle=pts.at(-1).p>=0?'#5DBE84':'#E06A60'; ctx.lineWidth=2;
+  pts.forEach((pt,i)=>{ const X=x(i),Y=y(pt.p); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); });
+  ctx.stroke();
+}
+function stats(){
+  const now = new Date();
+  const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  let sum=0, month=0, wins=0, losses=0, best=null, worst=null;
+  TRADES.forEach(t=>{
+    const n=Number(t.pnl)||0; sum+=n;
+    if(String(t.closed_on).startsWith(ym)) month+=n;
+    if(n>0) wins++; else if(n<0) losses++;
+    if(best==null||n>best) best=n;
+    if(worst==null||n<worst) worst=n;
+  });
+  const set=(id,txt,cls)=>{ const el=$(id); el.textContent=txt; el.className='v'+(cls?' '+cls:''); };
+  if(!TRADES.length){ ['s-total','s-month','s-wl','s-win','s-loss'].forEach(id=>set(id,'—')); return; }
+  set('s-total', money(sum), sum<0?'neg':sum>0?'pos':'');
+  set('s-month', money(month), month<0?'neg':month>0?'pos':'');
+  set('s-wl', wins+' / '+losses);
+  set('s-win', best>0?money(best):'—', 'pos');
+  set('s-loss', worst<0?money(worst):'—', 'neg');
+}
+function shotHTML(src, label){
+  if(src) return '<img class="shot" alt="'+esc(label)+'" src="'+src+'">';
+  return '<div class="shot empty">'+esc(label)+'</div>';
+}
+function paint(){
+  stats(); drawEq();
+  const list=$('list');
+  if(!TRADES.length){ list.innerHTML='<p class="help">No closed trades yet.</p>'; return; }
+  list.innerHTML = TRADES.map(t=>{
+    const n=Number(t.pnl)||0, win=n>=0;
+    const thumb = t.shot ? '<img alt="" src="'+t.shot+'">' : '<div class="ph">no shot</div>';
+    return '<div class="row'+(openId===t.id?' on':'')+'" data-id="'+t.id+'"><div class="thumb">'+thumb+'</div><div class="who"><b>'+esc(t.market)+'</b> <span class="when">'+esc(t.closed_on)+'</span><br><span class="'+(win?'pos':'neg')+'">'+(win?'Win ':'Loss ')+esc(money(n))+'</span></div></div>'
+      +'<div class="detail'+(openId===t.id?' open':'')+'" id="d-'+t.id+'">'
+      +'<div class="grid">'
+      +field('Side','side',t.side)+field('Hold time','hold',t.hold)
+      +field('Entry','entry',t.entry)+field('Exit','exit_px',t.exit_px)
+      +'<div><label class="k">Result</label><div class="'+(win?'pos':'neg')+'">'+esc(money(n))+'</div></div>'
+      +field('Money willing to lose €','risk',t.risk)
+      +field('Slice of the account','account_pct',t.account_pct)
+      +'<div class="full" style="grid-column:1/-1"><label class="k">Plan before you clicked</label><input data-k="plan" value="'+esc(t.plan||'')+'"></div>'
+      +'<div class="full" style="grid-column:1/-1"><label class="k">What you actually did</label><input data-k="did" value="'+esc(t.did||'')+'"></div>'
+      +'</div>'
+      +'<label class="k">Your comment</label><textarea class="comment" data-k="note">'+esc(t.note||'')+'</textarea>'
+      +'<div class="eyebrow">The charts</div><div class="shots">'+shotHTML(t.shot,'Screenshot 1')+shotHTML(t.shot2,'Screenshot 2')+'</div>'
+      +'<div class="actions"><button type="button" data-save="'+t.id+'">Save notes</button>'
+      +'<label class="ghost" style="padding:8px 10px;border:1px solid var(--hair);border-radius:8px;cursor:pointer">Replace shot 1<input data-file="shot" data-id="'+t.id+'" type="file" accept="image/*" hidden></label>'
+      +'<label class="ghost" style="padding:8px 10px;border:1px solid var(--hair);border-radius:8px;cursor:pointer">Replace shot 2<input data-file="shot2" data-id="'+t.id+'" type="file" accept="image/*" hidden></label>'
+      +'<button type="button" class="danger" data-del="'+t.id+'">Delete</button>'
+      +'<button type="button" class="ghost" data-close="'+t.id+'">Close</button></div></div>';
+  }).join('');
+  list.querySelectorAll('.row').forEach(row=>row.onclick=()=>{
+    openId = openId===row.dataset.id ? null : row.dataset.id;
+    paint();
+  });
+  list.querySelectorAll('[data-close]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openId=null; paint(); });
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    if(!confirm('Delete this trade?')) return;
+    const j = await api('DELETE', {id:b.dataset.del}, '?id='+b.dataset.del);
+    if(!j.ok) return alert(j.error||'Could not delete');
+    openId=null; await load();
+  });
+  list.querySelectorAll('[data-save]').forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    const box=$('d-'+b.dataset.save);
+    const t=TRADES.find(x=>x.id===b.dataset.save);
+    const patch={...t};
+    box.querySelectorAll('[data-k]').forEach(el=>{ patch[el.dataset.k]=el.value; });
+    const j = await api('PATCH', patch);
+    if(!j.ok) return alert(j.error||'Could not save');
+    await load();
+  });
+  list.querySelectorAll('[data-file]').forEach(inp=>inp.onchange=async ()=>{
+    const t=TRADES.find(x=>x.id===inp.dataset.id);
+    const data = await fileToJpeg(inp.files[0]);
+    const j = await api('PATCH', {...t, [inp.dataset.file]: data});
+    if(!j.ok) return alert(j.error||'Could not save the picture');
+    await load();
+  });
+}
+function field(label, key, val){
+  return '<div><label class="k">'+label+'</label><input data-k="'+key+'" value="'+esc(val??'')+'"></div>';
+}
+async function load(){
+  const j = await api('GET');
+  const box=$('setup');
+  if(!j.ok){
+    box.hidden=false;
+    box.innerHTML = esc(j.error||'Journal is not connected.')
+      + '<br>In Supabase, run <code>supabase/journal.sql</code>. On Vercel add <code>SUPABASE_URL</code> and <code>SUPABASE_SERVICE_KEY</code>, then redeploy.'
+      + (j.error==='wrong key' ? '<br><button type="button" id="ask-key">Enter journal key</button>' : '');
+    TRADES=[]; paint();
+    const btn=$('ask-key'); if(btn) btn.onclick=askKey;
+    return;
+  }
+  box.hidden=true;
+  TRADES = j.trades||[];
+  paint();
+}
+function askKey(){
+  const k = prompt('Journal key (the JOURNAL_SECRET you set on Vercel)');
+  if(k){ sessionStorage.setItem(KEY, k); load(); }
+}
+function num(v){
+  if(v==null) return null;
+  let s=String(v).trim().replace(/\s/g,'').replace('€','').replace('$','');
+  if(!s) return null;
+  if(s.includes(',')&&s.includes('.')) s=s.replace(/\./g,'').replace(',','.');
+  else if(s.includes(',')) s=s.replace(',','.');
+  const n=Number(s);
+  return Number.isFinite(n)?n:null;
+}
+function parseCsv(text){
+  text=text.replace(/^\uFEFF/,'');
+  const semi=(text.split(';').length>text.split(',').length);
+  const sep=semi?';':',';
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    }else if(c==='"') q=true;
+    else if(c===sep){ row.push(cur); cur=''; }
+    else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+    else if(c!=='\r') cur+=c;
+  }
+  if(cur||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(x=>String(x).trim()));
+}
+function isoDate(v){
+  const s=String(v||'').trim();
+  let m=s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[1]+'-'+m[2]+'-'+m[3];
+  m=s.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/);
+  if(m) return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return null;
+}
+function col(headers, names){
+  const h=headers.map(x=>String(x).toLowerCase());
+  for(const n of names){
+    const i=h.findIndex(x=>x.includes(n));
+    if(i>=0) return i;
+  }
+  return -1;
+}
+function fromCtrader(text){
+  const rows=parseCsv(text);
+  if(rows.length<2) return [];
+  const h=rows[0];
+  const iSym=col(h,['symbol']);
+  const iNet=col(h,['net']);
+  const iProfit=col(h,['profit','p&l','pnl','gross']);
+  const iClose=col(h,['closing time','close time']);
+  const iOpen=col(h,['opening time','open time','entry time']);
+  const iDir=col(h,['opening direction','direction','type']);
+  const iEntry=col(h,['entry price','opening price']);
+  const iExit=col(h,['closing price','close price']);
+  const out=[];
+  for(const r of rows.slice(1)){
+    const market=(iSym>=0?r[iSym]:'').trim();
+    const pnl=num(iNet>=0?r[iNet]: iProfit>=0?r[iProfit]:'');
+    const date=isoDate(iClose>=0?r[iClose]: iOpen>=0?r[iOpen]:'');
+    if(!market||pnl==null||!date) continue;
+    const dir=String(iDir>=0?r[iDir]:'').toLowerCase();
+    out.push({
+      market, closed_on:date, pnl,
+      side: dir.includes('sell')?'Sold': dir.includes('buy')?'Bought':null,
+      entry: iEntry>=0?String(r[iEntry]||'').trim():null,
+      exit_px: iExit>=0?String(r[iExit]||'').trim():null,
+      note: 'Imported from cTrader.'
+    });
+  }
+  return out;
+}
+$('f-date').value=new Date().toISOString().slice(0,10);
+$('btn-add').onclick=()=>{ $('add-box').hidden=false; $('add-box').scrollIntoView({behavior:'smooth'}); };
+$('btn-cancel').onclick=()=>$('add-box').hidden=true;
+$('btn-save').onclick=async()=>{
+  const pnl=num($('f-pnl').value);
+  if(pnl==null){ alert('Put the euro result in, like 240 or -80'); return; }
+  let market=$('f-mkt').value;
+  if(market==='Other') market=prompt('Market name')||'Other';
+  const [shot, shot2]=await Promise.all([fileToJpeg($('f-shot').files[0]), fileToJpeg($('f-shot2').files[0])]);
+  const j=await api('POST',{
+    market, closed_on:$('f-date').value, side:$('f-side').value, pnl,
+    risk:num($('f-risk').value), account_pct:$('f-acc').value,
+    entry:$('f-entry').value, exit_px:$('f-exit').value, hold:$('f-hold').value,
+    plan:$('f-plan').value, did:$('f-did').value, note:$('f-note').value, shot, shot2
+  });
+  if(!j.ok) return alert(j.error||'Could not save');
+  $('add-box').hidden=true;
+  await load();
+};
+$('btn-import').onclick=()=>$('file').click();
+$('file').onchange=async()=>{
+  const f=$('file').files[0]; if(!f) return;
+  const text=await f.text();
+  const trades=fromCtrader(text);
+  $('file').value='';
+  if(!trades.length){ alert('No closed trades found. Export the History statement as CSV from cTrader.'); return; }
+  if(!confirm('Import '+trades.length+' closed trades from cTrader?')) return;
+  const j=await api('POST',{trades});
+  if(!j.ok) return alert(j.error||'Import failed');
+  await load();
+};
+load().catch(e=>{ $('setup').hidden=false; $('setup').textContent='Could not reach the journal.'; });
+</script>
+</body>
+</html>
