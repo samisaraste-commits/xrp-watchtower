@@ -117,6 +117,21 @@
 
   footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--hair);font-size:10px;color:var(--dim);line-height:1.7}
   @media (max-width:860px){.grid{grid-template-columns:1fr}.gauge{margin-left:40px}.dgrid{grid-template-columns:1fr}}
+
+  .sector-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:0 0 22px}
+  .scard{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px 14px 12px;border-top:3px solid var(--dim)}
+  .scard.up{border-top-color:var(--buy)}
+  .scard.down{border-top-color:var(--stress)}
+  .scard .st{font-size:20px;font-weight:700;letter-spacing:.04em}
+  .scard .sl{font-size:10px;color:var(--muted);margin-top:2px}
+  .scard .sp{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;margin-top:10px;line-height:1}
+  .scard .sc{font-size:12px;font-weight:500;margin-top:4px}
+  .scard .sc.pos{color:var(--buy)}
+  .scard .sc.neg{color:var(--stress)}
+  .scard .stag{display:inline-block;margin-top:8px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:8px}
+  .scard.up .stag{color:#04222e;background:var(--buy)}
+  .scard.down .stag{color:#fff;background:var(--stress)}
+  @media (max-width:860px){.sector-strip{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -137,6 +152,17 @@
       <div class="upd"><span class="ic">↻</span> <span id="stamp-price">connecting…</span> · CoinGecko</div>
     </div>
   </header>
+
+  <div class="panel" style="margin-bottom:22px;padding:16px 18px">
+    <div class="panel-h"><div class="eyebrow">Sector baskets</div><div class="meta" id="stamp-sectors">connecting…</div></div>
+    <div class="sector-strip" id="sectors">
+      <div class="scard"><div class="st">XLV</div><div class="sl">Healthcare</div><div class="sp">—</div></div>
+      <div class="scard"><div class="st">XLK</div><div class="sl">Tech / AI</div><div class="sp">—</div></div>
+      <div class="scard"><div class="st">XLE</div><div class="sl">Oil companies</div><div class="sp">—</div></div>
+      <div class="scard"><div class="st">XLF</div><div class="sl">Banks</div><div class="sp">—</div></div>
+      <div class="scard"><div class="st">XLI</div><div class="sl">Factories</div><div class="sp">—</div></div>
+    </div>
+  </div>
 
   <div class="grid">
     <div class="panel">
@@ -321,12 +347,37 @@ async function loadDeriv(){try{const j=await getJSON('/api/derivatives');
 async function loadOdds(){try{const j=await getJSON('/api/odds');if(j.yesPct!=null){$('odds').textContent=j.yesPct+'%';$('odds-fill').style.width=j.yesPct+'%';}stamp('odds',true);}catch(e){$('stamp-odds').textContent='feed offline';}}
 async function loadBill(){try{const j=await getJSON('/api/bill');if(j.action){$('bill-action').textContent=j.action;$('bill-date').textContent='· '+j.date;}$('stamp-bill').textContent='updated '+now();}catch(e){$('stamp-bill').textContent='2×/day';}}
 
+
+async function loadSectors(){
+  const box=$('sectors');
+  if(!box) return;
+  try{
+    const j=await getJSON('/api/sectors');
+    const rows=(j.sectors||[]).slice().sort((a,b)=>(b.change??-999)-(a.change??-999));
+    if(!rows.length) throw 0;
+    const best=rows[0]?.change, worst=rows.at(-1)?.change;
+    box.innerHTML=rows.map(s=>{
+      const up=s.change!=null && s.change>=0;
+      const cls=s.change==null?'':(up?'up':'down');
+      const chg=s.change==null?'—':((up?'+':'')+s.change.toFixed(2)+'%');
+      const px=s.price==null?'—':Number(s.price).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      const tag = (s.change!=null && s.change===best && best>0) ? '<div class="stag">Leading</div>'
+                : (s.change!=null && s.change===worst && worst<0) ? '<div class="stag">Lagging</div>' : '';
+      return '<div class="scard '+cls+'"><div class="st">'+s.id+'</div><div class="sl">'+s.label+'</div><div class="sp">'+px+'</div><div class="sc '+(up?'pos':'neg')+'">'+chg+'</div>'+tag+'</div>';
+    }).join('');
+    stamp('sectors', true);
+  }catch(e){
+    const e2=$('stamp-sectors'); if(e2) e2.textContent='feed offline';
+  }
+}
+
 function startFeed(fn,min){fn();setInterval(fn,min*60000);}
 startFeed(loadPrice,CONFIG.refreshMin.price);
 startFeed(loadXrpl,CONFIG.refreshMin.xrpl);
 startFeed(loadDeriv,CONFIG.refreshMin.deriv);
 startFeed(loadOdds,CONFIG.refreshMin.odds);
 startFeed(loadBill,CONFIG.refreshMin.bill);
+startFeed(loadSectors, 10);
 </script>
 </body>
 </html>
